@@ -1,0 +1,40 @@
+# Modelos
+scripts/modelos/*.pkl
+scripts/modelos/*.joblib
+scripts/modelos/*.pth
+mlruns/
+
+# Credenciais e Ambientes
+.env
+.env.local
+*.key
+*.pem
+credentials.json
+.venv/
+env/
+venv/
+
+# Logs e Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
+logs/
+!logs/.gitkeep
+
+# Dados e Arquivos Pesados
+data/raw/
+data/processed/
+*.parquet
+*.csv
+*.zip
+!data/raw/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

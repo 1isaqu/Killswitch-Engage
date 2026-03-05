@@ -1,0 +1,17 @@
+latent_dim: 32            # Ruído pequeno, pois o preditor de regressão não precisa gerar 'imagens', mas apenas escalar uma régua unifilar de 1D.
+condition_dim: 64         # O HDBSCAN/KMeans + Features totalizam dezenas de colunas, será projetado/reduzido em 64 por MLPs para otimizar.
+hidden_layers: 3          # Profundidade ideal para não ocorrer overfitting retrospectivo em tabelas (Deep Learning para tabelas geralmente exige menos camadas que CNN/Visão).
+hidden_dim: 128           # Espaço de representação denso o suficiente para cruzar gêneros e sessões temporais.
+dropout_rate: 0.2         # Necessário pela esparsificação do SVD (evitar memorização extrema dos 10k usuários).
+learning_rate_g: 0.0001   # Learning rate do Gerador suave e lento para estabilizar Nash Equilibrium num espaço amostral 1D entre [0,1].
+learning_rate_d: 0.0004   # O Discriminador aprende mais rápido (Two-Time-Scale Update Rule - TTUR), padrão em GANs avançadas.
+betas: [0.5, 0.999]       # Adam Beta 1 reduzido previne oscilação do momento na adversariação (good practice de DCGANs).
+batch_size: 256           # Lotes maiores facilitam a normalização por batch sem muito ruído paramétrico em dados tabulares.
+epochs: 200               # GANs são infames por demorarem à convergir e treinarão rápido em CPU pois a rede MLP é contida.
+n_critic: 2               # Como a dimensão de output G é quase um float (threshold), o Discriminator pode ser muito mais forte - precisa ser guiado suavemente sem se tornar dominador.
+gradient_clipping: 1.0    # Evitar o infame Vanishing/Exploding Gradients quando a Loss de regressão e WGAN conflitarem em espaços latentes.
+loss_weights:
+  adversarial: 1.0        # Peso normal de enganar o Discriminador.
+  regression: 5.0         # Peso GIGANTE focando as inferências mais na realidade dos thresholds ótimos computados outofsample do que na pura ilusão do Disc.
+activation_function: "LeakyReLU" # Previne gradients mortos em matrizes tabulares onde muitos usuários não tem features de tempo (horas_jogadas == 0).
+initialization_method: "xavier_uniform" # Estabiliza variância matemática inter-camadas na progressão das epochs.

@@ -1,0 +1,33 @@
+{
+    "metadata": {
+        "timestamp": "2026-02-27 14:23:36",
+        "total_records": 122611
+    },
+    "statistical_validation": {
+        "KS_Price_p_value": 1.0,
+        "KS_Price_similar": true,
+        "KS_User score_p_value": 1.0,
+        "KS_User score_similar": true
+    },
+    "temporal_distribution": {
+        "train": 23530,
+        "val": 16046,
+        "test": 83035
+    },
+    "top_genres": {
+        "Indie": 80733,
+        "Casual": 58536,
+        "Action": 46248,
+        "Adventure": 45164,
+        "Simulation": 24143,
+        "Strategy": 22412,
+        "RPG": 21009,
+        "Free To Play": 12179,
+        "Early Access": 11094,
+        "Sports": 4882
+    },
+    "price_stats": {
+        "mean": 4.765091419219971,
+        "median": 2.240000009536743
+    }
+}

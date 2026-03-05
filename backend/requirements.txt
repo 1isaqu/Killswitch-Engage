@@ -1,0 +1,20 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+asyncpg==0.29.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+redis==5.0.1
+httpx==0.25.0
+python-multipart==0.0.6
+sqlalchemy==2.0.23
+pytest==7.4.3
+
+# Dependências para os modelos de recomendação
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn
+scipy
+joblib
+lightfm
+hdbscan

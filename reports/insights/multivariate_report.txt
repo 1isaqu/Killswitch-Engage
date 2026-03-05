@@ -1,0 +1,162 @@
+RELATÓRIO DE ANÁLISE DE RELACIONAMENTOS (PIPELINE V2)
+Arquivo Base: data/processed\imputed_dataset_v2.csv
+
+
+==================================================
+1. PREÇO MÉDIO POR CATEGORIA
+==================================================
+
+[Estatísticas de Preço por Categoria]
+                               mean  median    std   count
+Categories                                                
+Remote Play on Tablet         41.53    50.0  35.24    1105
+Remote Play on TV             41.08    50.0  36.61    2591
+Remote Play on Phone          40.10    50.0  35.27     953
+Steam Trading Cards           39.27    50.0  35.26   11394
+Captions available            29.38    20.0  32.75    1590
+Steam Workshop                27.88    15.0  31.74    2755
+Steam Cloud                   27.73    15.0  31.24   30396
+Full controller support       25.82     0.0  32.00   25507
+Shared/Split Screen Co-op     25.58     0.0  32.56    4316
+Remote Play Together          25.50     0.0  32.68    7786
+Steam Achievements            25.22     0.0  31.43   55808
+Shared/Split Screen           24.05     0.0  32.08    7452
+Includes level editor         24.05     0.0  31.99    2607
+Steam Leaderboards            24.01     0.0  31.76    9249
+Family Sharing                23.12     0.0  30.65   96105
+Adjustable Text Size          22.83    20.0  26.30     775
+Surround Sound                22.66     0.0  28.58    1020
+Adjustable Difficulty         22.57     0.0  27.37    2532
+Color Alternatives            22.18     0.0  27.17    1527
+Partial Controller Support    22.05     0.0  30.77   13709
+Subtitle Options              21.91     0.0  26.75     746
+Shared/Split Screen PvP       21.79     0.0  31.18    5137
+Co-op                         21.46     0.0  30.54   11040
+Stats                         20.37     0.0  29.86    5108
+LAN Co-op                     20.25     0.0  28.78    1028
+Camera Comfort                19.97     0.0  26.38    2825
+Multi-player                  19.84     0.0  30.25   20341
+Online Co-op                  19.50     0.0  28.89    6795
+Single-player                 18.87     0.0  29.10  116836
+Keyboard Only Option          18.23     0.0  25.84    2372
+Stereo Sound                  18.03     0.0  25.75    3960
+Cross-Platform Multiplayer    18.01     0.0  29.03    3037
+LAN PvP                       17.83     0.0  28.46    1058
+Custom Volume Controls        17.69     0.0  25.18    6516
+Save Anytime                  17.56     0.0  24.95    3656
+PvP                           17.02     0.0  28.74   12625
+Touch Only Option             16.76     0.0  24.42     881
+Online PvP                    16.06     0.0  28.25    8932
+Playable without Timed Input  16.04     0.0  24.39    6455
+VR Supported                  15.98     0.0  27.53    1221
+Mouse Only Option             14.85     0.0  23.63    3197
+Tracked Controller Support    12.23     0.0  25.50    5637
+VR Only                       11.04     0.0  24.42    5798
+In-App Purchases               5.97     0.0  18.78    3034
+MMO                            5.42     0.0  17.43    1340
+
+[Teste ANOVA] F-Stat: 318.99 | p-value: 0.0000e+00
+Conclusão: Existem diferenças SGNIFICATIVAS nos preços entre categorias.
+
+==================================================
+2. TEMPO DE JOGO POR GÊNERO
+==================================================
+
+[Retenção (Em Minutos) por Gênero]
+                         mean  median  count
+Genres                                      
+Massively Multiplayer  2194.1   372.0    714
+RPG                    1331.9   304.0   5941
+Strategy                946.9   294.0   5842
+Simulation              968.2   238.0   6482
+Early Access            758.1   222.0   1793
+Adventure               848.1   219.0  10848
+Action                  560.9   210.0  11031
+Sports                 1196.8   208.0   1097
+Indie                   876.0   200.0  17270
+Casual                 1115.8   190.0   8680
+Racing                 4430.1   184.5    886
+Free To Play           4876.2   162.0   1564
+
+[Kruskal-Wallis] H-Stat: 1464.03 | p-value: 1.8349e-307
+
+==================================================
+3. CONSISTÊNCIA DE NOTAS POR DESENVOLVEDOR
+==================================================
+
+[Top 10 Melhores Desenvolvedores (Alta Média, N >= 5)]
+                        mean    std  count
+Developers                                
+Playtouch              19.70  32.19     10
+Cyberworks             16.00  35.78      5
+Destructive Creations  12.83  31.44      6
+NP                     12.50  35.36      8
+Innocent Grey          11.75  33.23      8
+King Key Games          9.33  28.00      9
+Waffle                  8.33  28.87     12
+AFBIK Studio            8.05  25.57     20
+DreamBig Games          7.56  22.67      9
+3000AD                  5.29  13.98      7
+
+[Top 10 Piores Desenvolvedores (Baixa Média, N >= 5)]
+                        mean  std  count
+Developers                              
+&y                       0.0  0.0     11
+0 Deer Soft              0.0  0.0      6
+07th Expansion           0.0  0.0     14
+0cd studio               0.0  0.0      8
+100 Cats                 0.0  0.0      8
+100 Cozy Games,Cats      0.0  0.0     37
+10tons Ltd               0.0  0.0     17
+11 bit studios           0.0  0.0     10
+13-lab                   0.0  0.0      6
+14Dimension Enterprise   0.0  0.0      5
+
+==================================================
+4. CONQUISTAS E RETENÇÃO
+==================================================
+Correlação de Pearson (Linear): 0.018 (p=1.414e-02)
+Correlação de Spearman (Posts): 0.332 (p=0.000e+00)
+
+[Tempo de Jogo Médio por Faixa de Conquista]
+                   median    mean
+Achiev_Tier                      
+Baixo (1-10)        150.0   544.1
+Médio (11-50)       226.0   746.3
+Alto (51-150)       450.0  1248.6
+Extremo (151-500)   593.0  2439.9
+
+==================================================
+5. PREÇO vs NOTA GERAL
+==================================================
+
+[Ratio Positivo Médio por Faixa de Preço]
+                 mean  median     std  count
+Price_Tier                                  
+Gratuito       0.4491  0.5000  0.4141  81930
+Médio ($5-20)  0.4675  0.6000  0.4417   3409
+Alto ($20-60)  0.6338  0.7999  0.3747  21535
+AAA ($60+)     0.6899  0.7721  0.2842  15737
+
+[ANOVA Preço/Nota] F-Stat: 2468.58 | p-value: 0.0000e+00
+
+==================================================
+6. POPULARIDADE vs VOLUME (LOG-LOG)
+==================================================
+
+R² Linear no espaço Log: 0.5063
+Inclinação (Exponencial da relação): 0.7794
+
+==================================================
+7. ANÁLISE MULTIVARIADA (CORRELAÇÃO PARCIAL)
+==================================================
+
+[Preço vs Metacritic Score (Controlando: Ser 'Indie')]
+              n       r         CI95  p_val
+pearson  122611  0.2038  [0.2, 0.21]    0.0
+
+[Conquistas vs Playtime (Controlando: Metacritic Score)]
+              n       r          CI95   p_val
+pearson  122611  0.0026  [-0.0, 0.01]  0.3613
+
+FIM DO RELATÓRIO.

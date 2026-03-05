@@ -1,0 +1,63 @@
+# CHECKLIST DE SEGURANÇA - KILLSWITCH ENGAGE
+# Este arquivo deve ser lido antes de gerar qualquer código.
+# Todo prompt deve incluir: "Siga o checklist de segurança disponível em SECURITY_CHECKLIST.txt"
+
+## 1. CREDENCIAIS E SECRETS (CRÍTICO)
+[ ] NENHUMA credencial hard-coded em arquivos .py, .ipynb, .sql, .md
+[ ] Usar arquivo .env para todas as variáveis sensíveis
+[ ] .env NUNCA versionado (já está no .gitignore)
+[ ] .env.example com valores placeholder (ex: 'sua_senha_aqui')
+[ ] Tokens de API, chaves, senhas SEMPRE via ambiente
+[ ] Strings de conexão SEMPRE via DATABASE_URL (não montadas manualmente)
+
+## 2. BANCO DE DADOS
+[ ] Queries parametrizadas (nunca concatenação de strings)
+[ ] Usuário do banco com permissões MÍNIMAS (read-only para consultas, write-only para inserções específicas)
+[ ] Conexões com SSL obrigatório (require) por padrão
+[ ] Índices não expõem dados sensíveis
+[ ] Dados anonimizados em staging/dev
+
+## 3. API E BACKEND
+[ ] CORS configurado (não '*' em produção)
+[ ] Rate limiting em endpoints públicos
+[ ] Headers de segurança (Helmet.js no FastAPI via middleware)
+[ ] Input validation em TODOS os endpoints (Pydantic já ajuda)
+[ ] Sanitização de entradas (especialmente se for exibir em frontend)
+[ ] Logs sem dados pessoais (PII)
+[ ] Debug mode desligado em produção (DEBUG=False)
+
+## 4. MODELOS E ARQUIVOS
+[ ] Modelos .pkl/.joblib carregados com segurança (não executar código arbitrário)
+[ ] Arquivos de upload (se houver) validados e em diretório isolado
+[ ] Cache Redis com autenticação (não exposto publicamente)
+
+## 5. DEPENDÊNCIAS
+[ ] Revisar vulnerabilidades conhecidas (pip-audit, safety)
+[ ] Dependências fixadas (requirements.txt com versões exatas)
+[ ] Atualizações regulares de pacotes críticos
+
+## 6. TESTES AUTOMATIZADOS DE SEGURANÇA
+[ ] SAST (Static Analysis) rodando no CI
+[ ] Testes que verificam:
+    - Credenciais não aparecem em logs
+    - Endpoints protegidos retornam 401/403
+    - Input malicioso não quebra o sistema
+    - Rate limiting funciona
+
+## 7. PRODUÇÃO
+[ ] Variável ENVIRONMENT=production (comportamentos diferentes)
+[ ] SSL require (nunca disable)
+[ ] Backups automáticos configurados
+[ ] Monitoramento de tentativas de invasão
+[ ] Plano de resposta a incidentes documentado
+
+## 8. VIBECODE COM IA - REGRAS ESPECÍFICAS
+[ ] NUNCA confiar cegamente em código de segurança gerado por IA
+[ ] Sempre revisar manualmente:
+    - Autenticação
+    - Validação de inputs
+    - Configurações de CORS/SSL
+    - Gerenciamento de secrets
+[ ] Pedir para IA explicar em português o que cada parte de segurança faz
+[ ] Testar manualmente endpoints sensíveis
+[ ] Usar ferramentas automatizadas para complementar (não substituir) revisão humana

@@ -1,0 +1,16 @@
+fastapi==0.133.1
+uvicorn==0.41.0
+asyncpg==0.31.0
+pandas>=2.0.0
+numpy>=1.24.0
+python-dotenv==1.2.1
+pydantic-settings==2.13.1
+tqdm==4.66.1
+requests==2.32.5
+pydantic==2.12.5
+sqlalchemy>=2.0.0
+scikit-learn
+matplotlib
+seaborn
+scipy
+pingouin
