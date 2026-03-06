@@ -95,9 +95,10 @@ The system exposes three recommendation archetypes that let users control the **
 
 | Mode | Threshold | Exploration | Coverage (100 users) | Avg Score | Profile |
 |------|-----------|-------------|----------------------|-----------|---------|
-| 🎯 **Conservative** | 0.7 | 10% | 0.54% | **3.34** | Maximum precision — only the best candidates |
-| ⚖️ **Balanced** | 0.5 | 20% | 0.56% | 3.14 | Default mode — best of both worlds |
-| 🎲 **Adventurous** | 0.3 | 30% | 0.57% | 2.84 | Exploration and discovery of unexpected titles |
+| 🎯 **Conservative** | 0.7 | 10% | 0.54% | **3.34** | Seletividade máxima |
+| ⚖️ **Balanced** | 0.5 | 20% | 0.56% | 3.14 | Equilíbrio padrão |
+| 🎲 **Adventurous** | 0.3 | 30% | 0.57% | 2.84 | Foco em descoberta |
+| 🧬 **Meta (cGAN)** | **Auto** | 20% | **0.58%** | **3.18** | **Produção: Threshold personalizado** |
 
 > 🔁 **Overlap between Conservative and Adventurous: only 4/10 games in common** — real and measurable diversification.
 
