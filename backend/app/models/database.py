@@ -43,9 +43,9 @@ class Database:
                 ssl=ssl_param,
             )
             logger.info("Conexão com o banco de dados estabelecida via pool (asyncpg).")
-        except Exception as e:  # noqa: BLE001
-            logger.error(f"Erro ao conectar ao banco de dados: {e}")
-            raise e
+        except Exception as e:
+            logger.warning(f"Erro ao conectar ao BD relacional. Seguimos em fallback: {e}")
+            self.pool = None
 
     async def disconnect(self) -> None:
         if self.pool:

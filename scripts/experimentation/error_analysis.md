@@ -1,5 +1,5 @@
 # Análise de Viés e Erros das Recomendações
 
-- **Correlação de Viés de Popularidade**: -0.0095
-- **Índice Gini das Recomendações**: 0.4420
-- **Itens Cegos (Invisible Games)**: 2243
+- **Correlação de Viés de Popularidade**: nan
+- **Índice Gini das Recomendações**: 0.8907
+- **Itens Cegos (Invisible Games)**: 108360

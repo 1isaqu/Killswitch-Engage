@@ -1,7 +1,7 @@
 RandomForest:
-  n_estimators: 79
-  max_depth: 6
-  min_samples_split: 3
+  n_estimators: 86
+  max_depth: 29
+  min_samples_split: 2
 LightFm_SVD_mock:
   no_components: 64
   learning_rate: 0.03

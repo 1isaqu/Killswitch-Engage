@@ -1,9 +1,8 @@
 {
-    "Popularity_Bias_Corr": -0.00946663985399692,
-    "Gini_Index": 0.44204172,
-    "Invisible_Games_Count": 2243,
+    "Popularity_Bias_Corr": NaN,
+    "Gini_Index": 0.8907221486663347,
+    "Invisible_Games_Count": 108360,
     "Precision_By_Profile": {
-        "Hardcore": 0.0005,
-        "Casual": 0.000625
+        "Casual": 0.6999999999999998
     }
 }

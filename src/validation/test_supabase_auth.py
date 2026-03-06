@@ -1,7 +1,8 @@
 import asyncio
-import asyncpg
 import logging
 import os
+
+import asyncpg
 from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)

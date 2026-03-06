@@ -45,49 +45,78 @@ class RecomendadorService:
             logger.error(f"Erro ao carregar modelos de recomendação: {e}")
             return False
 
-    async def get_recomendacoes(self, usuario_id: UUID, k: int = 10) -> List[Dict[str, Any]]:
+    # Mapeamento dos 3 arquétipos de recomendação
+    MODOS = {
+        'conservador': {'threshold': 0.7, 'exploracao': 0.1},
+        'equilibrado':  {'threshold': 0.5, 'exploracao': 0.2},
+        'aventureiro':  {'threshold': 0.3, 'exploracao': 0.3},
+    }
+    MODO_PADRAO = 'equilibrado'
+
+    async def get_recomendacoes(
+        self,
+        usuario_id: UUID,
+        k: int = 10,
+        modo: str = None,
+    ) -> List[Dict[str, Any]]:
         if not self.is_loaded:
             return []
-            
-        # 1. Obter todas as IDs de itens da base do ranker
-        all_game_ids = list(self.ranker['game_map'].keys())
-        
-        # 2. Verificar se usuário existe no ranker (SVD)
-        user_map = self.ranker['user_map']
+
+        # Resolve o modo e seus parâmetros
+        modo = modo if modo in self.MODOS else self.MODO_PADRAO
+        cfg = self.MODOS[modo]
+        threshold = cfg['threshold']
+        exploracao = cfg['exploracao']
+
         item_embeddings = self.ranker['item_embeddings']
-        
+        user_map = self.ranker['user_map']
+
         if str(usuario_id) in user_map:
             user_idx = user_map[str(usuario_id)]
             user_vec = self.ranker['user_embeddings'][user_idx]
             scores = np.dot(item_embeddings, user_vec)
             explicacao_base = "Baseado no seu perfil de jogo"
         else:
-            # Usuário novo (Cold Start): Média global como baseline
-            # Futuro: Usar metadados do usuário (pais, etc) para clusterização a quente
+            # Cold Start: média global dos embeddings de usuário
             scores = np.mean(self.ranker['user_embeddings'], axis=0) @ item_embeddings.T
             explicacao_base = "Jogo popular recomendado para novos usuários"
 
-        # 3. Ranqueamento Inicial
-        top_indices = np.argsort(scores)[::-1]
-        
+        # Filtra pelo threshold do modo escolhido
+        mascara = scores >= threshold
+        indices_validos = np.where(mascara)[0]
+
+        # Se o threshold filtrou tudo (ex.: cold start com scores baixos), relaxa
+        if len(indices_validos) == 0:
+            indices_validos = np.argsort(scores)[::-1][:k * 2]
+
+        # Ordena os válidos por score decrescente
+        indices_ordenados = indices_validos[np.argsort(scores[indices_validos])[::-1]]
+
+        # Exploração: substitui uma fração dos slots por itens aleatórios dos válidos
+        n_explorar = int(k * exploracao)
+        n_top = k - n_explorar
+
+        top_indices = indices_ordenados[:n_top]
+
+        if n_explorar > 0 and len(indices_validos) > n_top:
+            pool_exploracao = indices_validos[n_top:]  # itens válidos não selecionados
+            n_amostrar = min(n_explorar, len(pool_exploracao))
+            explorados = np.random.choice(pool_exploracao, size=n_amostrar, replace=False)
+            final_indices = np.concatenate([top_indices, explorados])
+        else:
+            final_indices = top_indices
+
         recomendacoes = []
-        for idx in top_indices:
+        for idx in final_indices:
             game_id = self.ranker['reverse_game_map'][idx]
-            
-            # 4. Camada 1: Filtro de Qualidade (Opcional se performance for crítica)
-            # No mundo real, filtraríamos aqui ou pré-computaríamos games bons
-            # if not self.passa_filtro_qualidade(game_id): continue
-            
             recomendacoes.append({
                 "id": str(game_id),
                 "score": float(scores[idx]),
-                "explicacao": explicacao_base
+                "modo": modo,
+                "explicacao": explicacao_base,
             })
-            
-            if len(recomendacoes) >= k:
-                break
-                
-        return recomendacoes
+
+        return recomendacoes[:k]
 
     def passa_filtro_qualidade(self, game_id: str) -> bool:
         # Lógica simplificada: se temos o ID e o RF carregado, poderíamos rodar a predição

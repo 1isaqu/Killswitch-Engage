@@ -1,20 +1,25 @@
-version: '3.8'
-
 services:
   backend:
-    build: 
-      context: ./backend
+    build:
+      context: . # raiz do projeto — inclui src/ e backend/
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
-      - ./data:/app/data
+      - ./data:/app/data # monta apenas /data — não sobrescreve o código do container
+      - ./models:/app/models # modelos treinados (.pkl, .pt)
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/steam_db
       - REDIS_URL=redis://redis:6379/0
+      - DB_SSL_MODE=disable # banco local dentro do Docker não usa SSL
+      - ENVIRONMENT=development
+      - SECRET_KEY=troque-esta-chave-em-producao
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy # aguarda o banco estar pronto antes de subir
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - steam_network
 
@@ -28,6 +33,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d steam_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
     networks:
       - steam_network
 
@@ -35,6 +46,14 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
     networks:
       - steam_network
 
@@ -44,3 +63,4 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:

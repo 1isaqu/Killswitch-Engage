@@ -1,18 +1,20 @@
 import asyncio
-import os
-import pandas as pd
-import asyncpg
-from dotenv import load_dotenv
-from uuid import UUID
 import json
+import os
+from uuid import UUID
+
+import asyncpg
+import pandas as pd
+from dotenv import load_dotenv
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+
 async def extract_data():
     conn = await asyncpg.connect(DATABASE_URL, statement_cache_size=0, command_timeout=300)
-    await conn.execute("SET statement_timeout = 300000") # 5 min em ms
+    await conn.execute("SET statement_timeout = 300000")  # 5 min em ms
     print("Conectado ao Supabase para extração...")
 
     # 1. Extrair Jogos e Features Básicas
@@ -47,8 +49,11 @@ async def extract_data():
     df_usuarios.to_csv("data/ml_ready/usuarios_features.csv", index=False)
     df_sessoes.to_csv("data/ml_ready/interacoes_sessoes.csv", index=False)
 
-    print(f"Extração concluída: {len(df_jogos)} jogos, {len(df_usuarios)} usuários, {len(df_sessoes)} sessões.")
+    print(
+        f"Extração concluída: {len(df_jogos)} jogos, {len(df_usuarios)} usuários, {len(df_sessoes)} sessões."
+    )
     await conn.close()
+
 
 if __name__ == "__main__":
     asyncio.run(extract_data())

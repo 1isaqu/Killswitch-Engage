@@ -1,10 +1,12 @@
-import pandas as pd
-import os
-import logging
 import gc
+import logging
+import os
+
+import pandas as pd
 
 # OPTIMIZED: Configuração de logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 def split_dataset(csv_path, output_dir, train_ratio=0.7, seed=42):
     """
@@ -22,11 +24,11 @@ def split_dataset(csv_path, output_dir, train_ratio=0.7, seed=42):
         version += 1
 
     logging.info(f"\n--- Iniciando Divisão de Dados (v{version}) ---")
-    
+
     try:
         # OPTIMIZED: Uso de low_memory e dtypes automáticos
         df = pd.read_csv(csv_path, low_memory=False)
-        
+
         # OPTIMIZED: Embaralhamento e divisão via índices é mais econômico que sample(frac) direto se o df for massivo
         logging.info("Embaralhando e dividindo...")
         train_df = df.sample(frac=train_ratio, random_state=seed)
@@ -36,20 +38,21 @@ def split_dataset(csv_path, output_dir, train_ratio=0.7, seed=42):
         # Salvar
         train_path = os.path.join(output_dir, f"train_v{version}.csv")
         test_path = os.path.join(output_dir, f"test_v{version}.csv")
-        
+
         logging.info("Salvando arquivos...")
         train_df.to_csv(train_path, index=False)
         test_df.to_csv(test_path, index=False)
 
         logging.info(f"Sucesso! Treino: {len(train_df)} | Teste: {len(test_df)}")
-        
+
         del df, train_df, test_df
         gc.collect()
         return train_path, test_path
-    
+
     except Exception as e:
         logging.error(f"Erro ao processar o split: {e}")
         return None
+
 
 if __name__ == "__main__":
     split_dataset("data_splits/games_processed.csv", "data_splits")

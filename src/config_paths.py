@@ -17,4 +17,3 @@ IMPUTED_DATA_PATH: Path = Path(
         BASE_DIR / "v2_smart_imputation" / "imputed_dataset_v2.csv",
     )
 )
-

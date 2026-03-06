@@ -1,40 +1,112 @@
-# Modelos
+# ══════════════════════════════════════════════════════════════════
+# .gitignore — Killswitch Engage
+# ══════════════════════════════════════════════════════════════════
+
+# ── Credenciais e secrets (SECURITY_CHECKLIST § 1) ──────────────
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+secrets/
+.secrets.baseline       # detect-secrets baseline
+
+# ── Python ──────────────────────────────────────────────────────
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ─────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ── Build / packaging ────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+.installed.cfg
+
+# ── Testes e cobertura ───────────────────────────────────────────
+.pytest_cache/
+pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+
+# ── Tipagem ──────────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ── Linters / formatters ─────────────────────────────────────────
+.flake8
+.black
+
+# ── MLflow ──────────────────────────────────────────────────────
+mlruns/
+mlartifacts/
+scripts/experimentation/mlflow.db
+scripts/experimentation/mlflow_experiments.db
+
+# ── Modelos treinados (artefatos grandes) ────────────────────────
+models/
 scripts/modelos/*.pkl
 scripts/modelos/*.joblib
 scripts/modelos/*.pth
-mlruns/
+scripts/meta_learning/models/*.pth
 
-# Credenciais e Ambientes
-.env
-.env.local
-*.key
-*.pem
-credentials.json
-.venv/
-env/
-venv/
+# ── Dados (raw + processados) ────────────────────────────────────
+data/raw/
+data/processed/
+data/ml_ready/
+*.csv
+*.parquet
+*.feather
+*.zip
+*.tar.gz
+!data/raw/.gitkeep
+!data/processed/.gitkeep
 
-# Logs e Cache
-__pycache__/
-*.pyc
-.pytest_cache/
+# ── Logs ─────────────────────────────────────────────────────────
 *.log
 logs/
 !logs/.gitkeep
 
-# Dados e Arquivos Pesados
-data/raw/
-data/processed/
-*.parquet
-*.csv
-*.zip
-!data/raw/.gitkeep
+# ── Notebooks (outputs limpos são OK; checkpoints não) ───────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
 
-# IDEs
+# ── Docker ───────────────────────────────────────────────────────
+# (docker-compose.yml é versionado; override local não)
+docker-compose.override.yml
+
+# ── IDEs ─────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
 
-# OS
+# ── OS ───────────────────────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini

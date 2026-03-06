@@ -1,0 +1,75 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env.local
+.env.*.local
+
+# ── Sensitive files — NEVER in the image (SECURITY_CHECKLIST § 1) ─────────────
+.env
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+
+# ── Data — large raw files not needed at runtime ──────────────────────────────
+data/raw/
+data/processed/
+*.csv
+*.parquet
+*.feather
+
+# ── ML artefacts — mounted as a volume at runtime, not baked in ───────────────
+models/
+scripts/modelos/
+mlruns/
+scripts/experimentation/mlflow.db
+scripts/experimentation/mlflow_experiments.db
+
+# ── Notebooks — not required in production ────────────────────────────────────
+notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# ── Reports / figures — not required in production ────────────────────────────
+reports/
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+tests/
+backend/tests/
+pytest_cache/
+.pytest_cache/
+coverage.xml
+.coverage
+htmlcov/
+
+# ── Dev tooling ───────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.pre-commit-config.yaml
+pyproject.toml   # installed via pip install -e . — not needed at image runtime
+*.md
+*.txt
+.txt/
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── OS / IDE ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
