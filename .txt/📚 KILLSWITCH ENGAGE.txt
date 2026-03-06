@@ -1,18 +1,17 @@
-📚 ANOTAÇÃO COMPLETA DO PROJETO GAMEVERSE
+📚 ANOTAÇÃO COMPLETA DO PROJETO KILLSWITCH ENGAGE
 🎮 VISÃO GERAL
-Projeto: Sistema de Biblioteca de Jogos com Recomendação Inteligente
-Inspiração: Steam / Hydra Launcher
+Projeto: Killswitch Engage – Sistema Inteligente de Recomendação de Jogos
 Objetivo: Demonstrar habilidades em BD, Backend, ML/IA e Portfolio
 
 🏗️ PIPELINE COMPLETA (6 FASES)
-text
-FASE 0: PLANEJAMENTO
-FASE 1: FUNDAÇÃO (BD)
-FASE 2: EXPLORAÇÃO (EDA)
-FASE 3: BACKEND MÍNIMO
-FASE 4: MODELAGEM (IA/Recomendação)
-FASE 5: EXPERIMENTAÇÃO
-FASE 6: APRESENTAÇÃO (PORTFOLIO)
+
+- **FASE 0: PLANEJAMENTO**: Definição do problema de negócio, requisitos e arquitetura do sistema.
+- **FASE 1: FUNDAÇÃO (BD)**: Modelagem e criação do banco de dados PostgreSQL com 122k jogos.
+- **FASE 2: EXPLORAÇÃO (EDA)**: Análise profunda de dados para extrair insights e preparar features.
+- **FASE 3: BACKEND MÍNIMO**: Desenvolvimento da API robusta com FastAPI para servir o modelo.
+- **FASE 4: MODELAGEM (IA/Recomendação)**: Treinamento e ajuste dos modelos de ML (RF, KMeans, LightFM, cGAN).
+- **FASE 5: EXPERIMENTAÇÃO**: Otimização de hiperparâmetros e versionamento com MLflow e Optuna.
+- **FASE 6: APRESENTAÇÃO (PORTFOLIO)**: Documentação final, entrega e visualização de resultados.
 
 📋 FASE 0: PLANEJAMENTO
 Problema de Negócio
