@@ -88,6 +88,7 @@ logs/
 # ── Notebooks (outputs limpos são OK; checkpoints não) ───────────
 .ipynb_checkpoints/
 *.ipynb_checkpoints
+remake_graficos.ipynb
 
 # ── Docker ───────────────────────────────────────────────────────
 # (docker-compose.yml é versionado; override local não)
