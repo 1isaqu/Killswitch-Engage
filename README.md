@@ -347,23 +347,9 @@ Leia o arquivo `CONTRIBUTING.md` para mais detalhes sobre o processo de contribu
 
 ---
 
-## 📝 10. Licença e Autores
-
 **Autor:** Isaque  
 **Contato:** [![GitHub](https://img.shields.io/badge/GitHub-seu--usuario-181717?logo=github)](https://github.com/seu-usuario) [![LinkedIn](https://img.shields.io/badge/LinkedIn-Isaque-0A66C2?logo=linkedin)](https://linkedin.com/in/seu-usuario)
-
-Este projeto está licenciado sob a **Licença MIT** — veja o arquivo [LICENSE](LICENSE) para detalhes.
-
----
-
-## 🏆 11. Agradecimentos
-
-- **Steam / Valve** por disponibilizar dados públicos do catálogo de jogos
-- **Comunidade open source** pelas ferramentas incríveis: LightFM, Optuna, MLflow, FastAPI
-- **Scikit-learn, PyTorch e SciPy** pela robustez dos algoritmos implementados
-
----
-
+**Artigo:** [![Medium](https://medium.com/@isaquecarvalho2007/como-constru%C3%AD-um-sistema-de-recomenda%C3%A7%C3%A3o-que-entende-jogadores-de-verdade-c0c32aafa470)
 <div align="center">
 
 **⭐ Se este projeto foi útil, considere deixar uma estrela!**
