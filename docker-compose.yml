@@ -1,5 +1,6 @@
 services:
   backend:
+    image: ghcr.io/1isaqu/killswitch-engage-an-intelligent-game-library-recommendation-system:latest
     build:
       context: . # raiz do projeto — inclui src/ e backend/
       dockerfile: Dockerfile
