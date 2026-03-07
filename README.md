@@ -1,14 +1,14 @@
-🏗️ PIPELINE COMPLETA (6 FASES)
+🏗️ COMPLETE PIPELINE (6 PHASES)
 
-- **FASE 0: PLANEJAMENTO**: Definição do problema de negócio, requisitos e arquitetura do sistema.
-- **FASE 1: FUNDAÇÃO (BD)**: Modelagem e criação do banco de dados PostgreSQL com 122k jogos.
-- **FASE 2: EXPLORAÇÃO (EDA)**: Análise profunda de dados para extrair insights e preparar features.
-- **FASE 3: BACKEND MÍNIMO**: Desenvolvimento da API robusta com FastAPI para servir o modelo.
-- **FASE 4: MODELAGEM (IA/Recomendação)**: Treinamento e ajuste dos modelos de ML (RF, KMeans, LightFM, cGAN).
-- **FASE 5: EXPERIMENTAÇÃO**: Otimização de hiperparâmetros e versionamento com MLflow e Optuna.
-- **FASE 6: APRESENTAÇÃO (PORTFOLIO)**: Documentação final, entrega e visualização de resultados.
+- **PHASE 0: PLANNING**: Definition of the business problem, requirements, and system architecture.
+- **PHASE 1: FOUNDATION (DB)**: Modeling and creation of the PostgreSQL database with 122k games.
+- **PHASE 2: EXPLORATION (EDA)**: Deep data analysis to extract insights and prepare features.
+- **PHASE 3: MINIMUM BACKEND**: Development of a robust API with FastAPI to serve the model.
+- **PHASE 4: MODELING (AI/Recommendation)**: Training and tuning of ML models (RF, KMeans, LightFM, cGAN).
+- **PHASE 5: EXPERIMENTATION**: Hyperparameter optimization and versioning with MLflow and Optuna.
+- **PHASE 6: PRESENTATION (PORTFOLIO)**: Final documentation, delivery, and results visualization.
 
-# 🎮 Killswitch Engage – Sistema Inteligente de Recomendação de Jogos
+# 🎮 Killswitch Engage – Intelligent Game Recommendation System
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -24,71 +24,71 @@
 
 ---
 
-## 📌 1. Visão Geral
+## 📌 1. Overview
 
-**Killswitch Engage** é um sistema completo de recomendação de jogos, construído do zero com ML em produção como objetivo central. O pipeline abrange desde a ingestão e limpeza de **122.507 jogos da Steam** até uma API em produção com latência < 15ms, passando por modelos de aprendizado de máquina treinados sobre **10.000 usuários sintéticos** com histórico realista de sessões.
+**Killswitch Engage** is a complete game recommendation system built from scratch with ML in production as its core goal. The pipeline ranges from the ingestion and cleaning of **122,507 Steam games** to a production API with < 15ms latency, including machine learning models trained on **10,000 synthetic users** with realistic session histories.
 
-### 🔍 O Problema
+### 🔍 The Problem
 
-A Steam possui mais de 50.000 jogos no catálogo. Um usuário novo se perde. Um usuário experiente fica preso em uma "bolha" dos mesmos gêneros. O desafio: recomendar o jogo certo, para a pessoa certa, no momento certo — lidando com **cold start**, **viés de popularidade**, **dados esparsos** e **escalabilidade**.
+Steam has over 50,000 games in its catalog. A new user gets lost. An experienced user gets stuck in a "bubble" of the same genres. The challenge: recommend the right game, to the right person, at the right time—dealing with **cold start**, **popularity bias**, **sparse data**, and **scalability**.
 
-### 💡 A Solução
+### 💡 The Solution
 
-Uma arquitetura de **4 camadas em cascata**:
+A **4-layer cascading architecture**:
 
 ```
-[Entrada: Perfil do Usuário]
+[Input: User Profile]
          │
          ▼
  ┌─────────────────┐
- │  Camada 1: RF   │  → Classificador (RandomForest) filtra jogos relevantes
- │  (Filtro)       │     com base em features de conteúdo (gênero, preço, tags)
+ │  Layer 1: RF    │  → Classifier (RandomForest) filters relevant games
+ │  (Filter)       │     based on content features (genre, price, tags)
  └────────┬────────┘
           │
           ▼
  ┌─────────────────┐
- │  Camada 2:      │  → Clustering (KMeans / HDBSCAN) identifica o arquétipo
- │  Clustering     │     de usuário (casual, médio, hardcore)
+ │  Layer 2:       │  → Clustering (KMeans / HDBSCAN) identifies the user
+ │  Clustering     │     archetype (casual, medium, hardcore)
  └────────┬────────┘
           │
           ▼
  ┌─────────────────┐
- │  Camada 3:      │  → LightFM (Ranking Hybrid) ranqueia os candidatos por
- │  LightFM Ranker │     colaboratividade + features de conteúdo
+ │  Layer 3:       │  → LightFM (Hybrid Ranker) ranks candidates by
+ │  LightFM Ranker │     collaborative + content features
  └────────┬────────┘
           │
           ▼
  ┌─────────────────┐
- │  Camada 4: cGAN │  → Meta-aprendizado por modo (conservador/equilibrado/
- │  (Meta-Learner) │     aventureiro) com threshold e exploração calibrados
+ │  Layer 4: cGAN  │  → Meta-learning by mode (conservative/balanced/
+ │  (Meta-Learner) │     adventurous) with calibrated threshold & exploration
  └─────────────────┘
           │
           ▼
-  [API FastAPI + Cache Redis]
+  [FastAPI API + Redis Cache]
 ```
 
 ---
 
-## ✨ 2. Funcionalidades
+## ✨ 2. Features
 
-- ✅ **Recomendações personalizadas** baseadas em perfil completo de usuário
-- ✅ **3 modos de recomendação**: Conservador (precisão), Equilibrado (padrão), Aventureiro (exploração)
-- ✅ **Cold start** para novos usuários — fallback por popularidade + cluster de arquétipo
-- ✅ **API rápida** com latência < 15ms e cache Redis nas rotas analíticas (TTL 1h)
-- ✅ **Pipeline completo de dados** com imputação inteligente validada (KS-test p = 1.0)
-- ✅ **MLOps integrado**: experimentos versionados com MLflow + otimização Bayesiana (Optuna, 20 trials)
-- ✅ **Análise de cobertura com Lei de Potência** (R² = 0.9474): escalabilidade comprovada matematicamente
-- ✅ **Segurança**: credenciais por variáveis de ambiente, SSL verificado, sem secrets hard-coded
+- ✅ **Personalized recommendations** based on a complete user profile
+- ✅ **3 recommendation modes**: Conservative (precision), Balanced (default), Adventurous (exploration)
+- ✅ **Cold start** for new users — popularity fallback + archetype clustering
+- ✅ **Fast API** with < 15ms latency and Redis cache on analytics routes (TTL 1h)
+- ✅ **Complete data pipeline** with smart validated imputation (KS-test p = 1.0)
+- ✅ **Integrated MLOps**: versioned experiments with MLflow + Bayesian optimization (Optuna, 20 trials)
+- ✅ **Coverage analysis with Power Law** (R² = 0.9474): mathematically proven scalability
+- ✅ **Security**: credentials via environment variables, SSL verified, no hard-coded secrets
 
 ---
 
-## 📊 3. Métricas e Resultados
+## 📊 3. Metrics and Results
 
-### 3.1 Performance dos Modelos
+### 3.1 Model Performance
 
-Avaliação offline consolidada do pipeline híbrido sobre usuários sintéticos:
+Consolidated offline evaluation of the hybrid pipeline over synthetic users:
 
-| Métrica | @5 | @10 | @20 | Benchmark (popularidade) | Ganho @10 |
+| Metric | @5 | @10 | @20 | Benchmark (popularity) | Gain @10 |
 |---------|-----|------|------|--------------------------|-----------|
 | **Precision** | 1.000 | 0.700 | 0.350 | 0.58 | **+20.7%** |
 | **Recall** | 0.500 | 0.410 | 0.700 | 0.32 | **+28.1%** |
@@ -97,267 +97,267 @@ Avaliação offline consolidada do pipeline híbrido sobre usuários sintéticos
 | **MRR** | — | 1.000 | — | — | — |
 | **Coverage** | — | 11.5% | — | — | — |
 
-> **Telemetria simulada (TDD online):** CTR = 30.4% · Tempo de sessão médio = 210 min · Taxa de aceitação = 52.7%
+> **Simulated Telemetry (Online TDD):** CTR = 30.4% · Avg session time = 210 min · Acceptance rate = 52.7%
 
-### 3.2 Os 3 Modos de Recomendação
+### 3.2 The 3 Recommendation Modes
 
-O sistema expõe três arquétipos de recomendação que permitem ao usuário controlar o trade-off entre **precisão e descoberta**:
+The system exposes three recommendation archetypes that allow the user to control the trade-off between **precision and discovery**:
 
-| Modo | Threshold | Exploração | Cobertura (100 users) | Score Médio | Perfil |
+| Mode | Threshold | Exploration | Coverage (100 users) | Avg Score | Profile |
 |------|-----------|------------|----------------------|-------------|--------|
-| 🎯 **Conservador** | 0.7 | 10% | 0.54% | **3.34** | Máxima precisão — apenas os melhores candidatos |
-| ⚖️ **Equilibrado** | 0.5 | 20% | 0.56% | 3.14 | Balanceado — modo padrão para a maioria |
-| 🎲 **Aventureiro** | 0.3 | 30% | 0.57% | 2.84 | Exploração e descoberta de títulos inesperados |
+| 🎯 **Conservative** | 0.7 | 10% | 0.54% | **3.34** | Maximum precision — only the best candidates |
+| ⚖️ **Balanced** | 0.5 | 20% | 0.56% | 3.14 | Balanced — default mode for the majority |
+| 🎲 **Adventurous** | 0.3 | 30% | 0.57% | 2.84 | Exploration and discovery of unexpected titles |
 
-> 🔁 **Sobreposição entre Conservador e Aventureiro: apenas 4/10 jogos em comum** — diversificação real e mensurável.
+> 🔁 **Overlap between Conservative and Adventurous: only 4/10 games in common** — real and measurable diversification.
 
-![Comparativo dos 3 Modos — Cobertura Linear](reports/figures/coverage_linear.png)
+![Comparison of the 3 Modes — Linear Coverage](reports/figures/coverage_linear.png)
 
-### 3.3 Análise de Cobertura e Escalabilidade
+### 3.3 Coverage and Scalability Analysis
 
-A cobertura segue uma **Lei de Potência** com R² = 0.9474, comprovando que o baixo percentual atual é uma característica do volume de dados sintéticos — e não um defeito do modelo.
+Coverage follows a **Power Law** with R² = 0.9474, proving that the current low percentage is a characteristic of the synthetic data volume—and not a model defect.
 
-**Dados empíricos (10.000 usuários reais do ranker, seed=42):**
+**Empirical Data (10,000 real ranker users, seed=42):**
 
-| Usuários | Jogos Únicos | Cobertura |
+| Users | Unique Games | Coverage |
 |----------|-------------|-----------|
 | 100 | 633 | 0.52% |
-| 500 | 1.565 | 1.28% |
-| 1.000 | 2.148 | 1.75% |
-| 2.000 | 2.733 | 2.23% |
-| 5.000 | 3.300 | 2.69% |
-| **10.000** | **3.768** | **3.08%** |
+| 500 | 1,565 | 1.28% |
+| 1,000 | 2,148 | 1.75% |
+| 2,000 | 2,733 | 2.23% |
+| 5,000 | 3,300 | 2.69% |
+| **10,000** | **3,768** | **3.08%** |
 
-**Regressão log-log — parâmetros do modelo de potência:**
+**Log-Log Regression — Power model parameters:**
 
-| Parâmetro | Valor | Interpretação |
+| Parameter | Value | Interpretation |
 |-----------|-------|---------------|
-| **Expoente (a)** | `0.3673` | Cada 10× usuários → cobertura +2.3× |
-| **Intercepto (b)** | `-2.1099` | Escala base do modelo |
-| **R²** | `0.9474` | Modelo explica **94.7%** da variação |
-| **Equação** | `cob = exp(-2.1099) × n^0.3673` | Lei de potência sublinear (Long-Tail) |
+| **Exponent (a)** | `0.3673` | Every 10× users → coverage +2.3× |
+| **Intercept (b)** | `-2.1099` | Base scale of the model |
+| **R²** | `0.9474` | Model explains **94.7%** of the variance |
+| **Equation** | `cov = exp(-2.1099) × n^0.3673` | Sublinear power law (Long-Tail) |
 
-**Projeções com IC 95%:**
+**Projections with 95% CI:**
 
-| Usuários | Cobertura Central | IC 95% |
+| Users | Central Coverage | 95% CI |
 |----------|-------------------|--------|
-| 100.000 | 8.3% | [6.4%, 10.9%] |
-| **500.000** | **15.0% ← meta** | [11.5%, 19.7%] |
-| 1.000.000 | 19.4% | [14.8%, 25.4%] |
-| 2.000.000 | 25.0% | [19.1%, 32.7%] |
-| 5.000.000 | 35.0% | [26.8%, 45.8%] |
+| 100,000 | 8.3% | [6.4%, 10.9%] |
+| **500,000** | **15.0% ← goal** | [11.5%, 19.7%] |
+| 1,000,000 | 19.4% | [14.8%, 25.4%] |
+| 2,000,000 | 25.0% | [19.1%, 32.7%] |
+| 5,000,000 | 35.0% | [26.8%, 45.8%] |
 
-> 📈 **Conclusão:** Com ~497.364 usuários reais, o sistema atinge 15% de cobertura — nível comparável a grandes plataformas de recomendação.
+> 📈 **Conclusion:** With ~497,364 real users, the system reaches 15% coverage — a level comparable to large recommendation platforms.
 
-![Escala Log-Log — Lei de Potência Confirmada](reports/figures/coverage_loglog.png)
-![Projeção com Intervalo de Confiança 95%](reports/figures/coverage_projection_with_ci.png)
+![Log-Log Scale — Power Law Confirmed](reports/figures/coverage_loglog.png)
+![Projection with 95% Confidence Interval](reports/figures/coverage_projection_with_ci.png)
 
 ---
 
-## 💼 4. Impacto de Negócio
+## 💼 4. Business Impact
 
-### 4.1 ROI e Retorno Financeiro
+### 4.1 ROI and Financial Return
 
-| Cenário | ROI (12 meses) | Payback |
+| Scenario | ROI (12 months) | Payback |
 |---------|----------------|---------|
-| 🔵 Conservador | 320% | 4 meses |
-| 🟡 Realista | 460% | 3 meses |
-| 🟢 Otimista | 580% | 2 meses |
+| 🔵 Conservative | 320% | 4 months |
+| 🟡 Realistic | 460% | 3 months |
+| 🟢 Optimistic | 580% | 2 months |
 
-### 4.2 Métricas de Negócio Projetadas
+### 4.2 Projected Business Metrics
 
-| Indicador | Impacto Projetado |
+| Indicator | Projected Impact |
 |-----------|--------------------|
-| MAU (engajamento mensal) | **+27%** |
+| MAU (monthly active users) | **+27%** |
 | Churn rate | **−18%** |
-| Receita incremental | **+23%** |
-| CAC (custo de aquisição) | **−15%** |
+| Incremental revenue | **+23%** |
+| CAC (customer acquisition cost) | **−15%** |
 | LTV (lifetime value) | **+31%** |
 
-### 4.3 Proxy Metrics (Simulação Online TDD)
+### 4.3 Proxy Metrics (Online TDD Simulation)
 
-| Métrica | Valor Medido |
+| Metric | Measured Value |
 |---------|-------------|
-| Taxa de aceitação simulada | **52.7%** |
-| Tempo médio de sessão projetado | **210 min** |
-| CTR simulado | **30.4%** |
+| Simulated acceptance rate | **52.7%** |
+| Projected avg session time | **210 min** |
+| Simulated CTR | **30.4%** |
 
 ---
 
-## 🛠️ 5. Tecnologias Utilizadas
+## 🛠️ 5. Technologies Used
 
 ### ML & Data Science
 
-| Tecnologia | Uso no Projeto |
+| Technology | Project Usage |
 |------------|---------------|
-| **LightFM** | Ranking híbrido colaborativo + conteúdo |
-| **Scikit-learn** | RandomForest (camada 1) + KMeans (camada 2) |
-| **PyTorch** | cGAN meta-learner (camada 4) |
-| **HDBSCAN** | Clustering alternativo de usuários |
-| **Optuna** | Otimização Bayesiana (20 trials por modelo) |
-| **MLflow** | Versionamento de experimentos e artefatos |
-| **SciPy** | Testes estatísticos (KS-test, regressão log-log) |
+| **LightFM** | Collaborative + Content Hybrid Ranking |
+| **Scikit-learn** | RandomForest (layer 1) + KMeans (layer 2) |
+| **PyTorch** | cGAN meta-learner (layer 4) |
+| **HDBSCAN** | Alternative user clustering |
+| **Optuna** | Bayesian Optimization (20 trials per model) |
+| **MLflow** | Experiment and artifact versioning |
+| **SciPy** | Statistical tests (KS-test, log-log regression) |
 
 ### Backend & Infra
 
-| Tecnologia | Uso no Projeto |
+| Technology | Project Usage |
 |------------|---------------|
-| **FastAPI** | API assíncrona de alta performance |
-| **asyncpg** | Driver PostgreSQL async (até 3× mais rápido que síncrono) |
-| **Redis** | Cache de rotas analíticas (TTL 1h) |
-| **PostgreSQL 15** | Banco principal com índices otimizados |
-| **Docker + Compose** | Orquestração completa dos serviços |
+| **FastAPI** | High-performance asynchronous API |
+| **asyncpg** | Async PostgreSQL driver (up to 3× faster than sync) |
+| **Redis** | Analytics routes caching (1h TTL) |
+| **PostgreSQL 15** | Main database with optimized indices |
+| **Docker + Compose** | Complete service orchestration |
 
 ---
 
-## 🚀 6. Como Executar
+## 🚀 6. How to Run
 
-### Pré-requisitos
+### Prerequisites
 
 - Python 3.11+
-- Docker e Docker Compose
-- PostgreSQL (ou usar o container via Docker)
-- Redis (ou usar o container via Docker)
+- Docker and Docker Compose
+- PostgreSQL (or use the container via Docker)
+- Redis (or use the container via Docker)
 
-### Passo a Passo
+### Step by Step
 
 ```bash
-# 1. Clone o repositório
+# 1. Clone the repository
 git clone https://github.com/1isaqu/killswitch-engage.git
 cd killswitch-engage
 
-# 2. Configure ambiente virtual
+# 2. Configure virtual environment
 python -m venv venv
 source venv/bin/activate   # Linux/Mac
 venv\Scripts\activate      # Windows
 
-# 3. Instale dependências
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure variáveis de ambiente
+# 4. Configure environment variables
 cp .env.example .env
-# Edite .env com suas configurações de banco, Redis e secrets
+# Edit .env with your database, Redis, and secrets configs
 
-# 5. Suba os serviços com Docker
+# 5. Bring up services with Docker
 docker-compose up -d
 
-# 6. Popule o banco (opcional)
+# 6. Populate the database (optional)
 python scripts/populate_database.py
 
-# 7. Execute a API
+# 7. Run the API
 uvicorn backend.app.api:app --reload
 
-# 8. Acesse
+# 8. Access
 #   API:      http://localhost:8000
 #   Docs:     http://localhost:8000/docs
 #   MLflow:   http://localhost:5000
 ```
 
-### Testando a API
+### Testing the API
 
 ```bash
-# Recomendação para usuário (modo padrão: equilibrado)
+# Recommendation for user (default mode: balanced)
 curl "http://localhost:8000/recomendacoes/1?k=10"
 
-# Especificando modo de recomendação
+# Specifying recommendation mode
 curl "http://localhost:8000/recomendacoes/1?modo=aventureiro&k=10"
 curl "http://localhost:8000/recomendacoes/1?modo=conservador&k=10"
 
-# Verificar saúde da API
+# Check API health
 curl "http://localhost:8000/health"
 ```
 
 ---
 
-## 📁 7. Estrutura do Projeto
+## 📁 7. Project Structure
 
 ```
 killswitch-engage/
-├── backend/                    # API FastAPI (rotas, config, middlewares)
+├── backend/                    # FastAPI API (routes, config, middlewares)
 │   └── app/
-│       ├── api.py              # Entry point da aplicação
-│       ├── config.py           # Configurações (SSL, DB, Redis)
-│       └── routes/             # Endpoints (recomendações, analíticos)
-├── src/                        # Código fonte dos modelos e serviços
-│   ├── models/                 # Definições dos modelos ML
-│   ├── services/               # RecomendadorService (orquestração das camadas)
-│   ├── validation/             # Scripts de validação e sanidade
-│   └── experimentation/        # Integração MLflow + Optuna
-├── scripts/                    # Scripts utilitários e pipelines
+│       ├── api.py              # Application entry point
+│       ├── config.py           # Configurations (SSL, DB, Redis)
+│       └── routes/             # Endpoints (recommendations, analytics)
+├── src/                        # Source code for models and services
+│   ├── models/                 # ML Models definitions
+│   ├── services/               # RecomendadorService (layers orchestration)
+│   ├── validation/             # Validation and sanity scripts
+│   └── experimentation/        # MLflow + Optuna integration
+├── scripts/                    # Utility scripts and pipelines
 │   ├── analysis/               # coverage_regression.py, ablation, etc.
-│   ├── training/               # Treino de cada camada (layer1, layer2, layer3)
-│   ├── meta_learning/          # Pipeline de treino cGAN (Camada 4)
-│   └── experimentation/        # mlflow.db e experimentos versionados
-├── data/                       # Dados brutos e processados (ignorado no git)
-├── models/                     # Artefatos treinados (.pkl, .pt) (ignorado no git)
+│   ├── training/               # Each layer training (layer1, layer2, layer3)
+│   ├── meta_learning/          # cGAN train pipeline (Layer 4)
+│   └── experimentation/        # mlflow.db and versioned experiments
+├── data/                       # Raw and processed data (ignored in git)
+├── models/                     # Trained artifacts (.pkl, .pt) (ignored in git)
 ├── reports/
-│   ├── figures/                # Gráficos gerados (PNG)
-│   ├── figures remake/         # Gráficos regenerados (Plotly, PT-BR)
-│   ├── graficos_apresentaveis/ # Gráficos para apresentação
-│   └── insights/               # Relatórios técnicos (Markdown, CSV)
-├── .txt/                       # Documentação interna do projeto
-├── .env.example                # Template de variáveis de ambiente
-├── docker-compose.yml          # Orquestração dos serviços
-├── indices.sql                 # Índices SQL recomendados
-├── requirements.txt           # Dependências Python
-└── README.md                   # Este arquivo
+│   ├── figures/                # Generated charts (PNG)
+│   ├── figures remake/         # Regenerated charts (Plotly, PT-BR)
+│   ├── graficos_apresentaveis/ # Presentation charts
+│   └── insights/               # Technical reports (Markdown, CSV)
+├── .txt/                       # Internal project documentation
+├── .env.example                # Environment variables template
+├── docker-compose.yml          # Services orchestration
+├── indices.sql                 # Recommended SQL indices
+├── requirements.txt           # Python dependencies
+└── README.md                   # This file
 ```
 
 ---
 
-## 📈 8. Experimentação e MLOps
+## 📈 8. Experimentation and MLOps
 
-O projeto adota uma abordagem rigorosa de experimentação:
+The project adopts a rigorous experimentation approach:
 
-| Aspecto | Detalhe |
+| Aspect | Detail |
 |---------|---------|
-| **Versionamento** | Todos os experimentos rastreados no MLflow com hiperparâmetros e métricas |
-| **Otimização** | Optuna com busca Bayesiana — 20 trials por modelo (sweet-spot qualidade/tempo) |
-| **Ablação** | Comparação sistemática: Colaborativo vs. Conteúdo vs. Híbrido vs. Híbrido+Temporal |
-| **Diagnóstico** | Gini index = 0.016 (baixo viés de concentração), Silhouette = 0.8654 pós-sanidade |
-| **Validação estatística** | KS-test p = 1.0 (imputação estatisticamente equivalente aos dados originais) |
-| **PR-AUC** | 0.9153 (substituiu ROC-AUC após identificar desbalanceamento 73/27%) |
+| **Versioning** | All experiments tracked in MLflow with hyperparameters and metrics |
+| **Optimization** | Optuna with Bayesian search — 20 trials per model (sweet-spot quality/time) |
+| **Ablation** | Systematic comparison: Collaborative vs. Content vs. Hybrid vs. Hybrid+Temporal |
+| **Diagnostics** | Gini index = 0.016 (low concentration bias), Silhouette = 0.8654 post-sanity |
+| **Statistical Validation** | KS-test p = 1.0 (imputation statistically equivalent to original data) |
+| **PR-AUC** | 0.9153 (replaced ROC-AUC after identifying 73/27% imbalance) |
 
 ```bash
-# Visualizar todos os experimentos no MLflow UI
+# View all experiments in MLflow UI
 mlflow ui --backend-store-uri sqlite:///scripts/experimentation/mlflow.db
 ```
 
-### Decisões Técnicas Notáveis
+### Notable Technical Decisions
 
-| Decisão | Alternativa Rejeitada | Motivo |
+| Decision | Rejected Alternative | Reason |
 |---------|----------------------|--------|
-| **asyncpg Pool** | SQLAlchemy Sync | Até 3× mais rápido; suporta 1000+ RPS em hardware modesto |
-| **Batch Insert (5.000)** | Inserts unitários | Reduz RTTs: ingestão de 122k jogos caiu de horas para ~90s |
-| **PR-AUC como métrica** | ROC-AUC | Dataset desbalanceado (73/27%) — ROC-AUC era enganoso |
-| **KMeans (k=3)** | HDBSCAN inicial | Silhouette subiu de 0.36 → 0.87 após retreino com 309k sessões |
-| **`equilibrado` como padrão** | `conservador` como padrão | Melhor onboarding sem sacrificar qualidade para novos usuários |
+| **asyncpg Pool** | SQLAlchemy Sync | Up to 3× faster; supports 1000+ RPS on modest hardware |
+| **Batch Insert (5,000)** | Unitary inserts | Reduces RTTs: 122k games ingestion fell from hours to ~90s |
+| **PR-AUC as metric** | ROC-AUC | Imbalanced dataset (73/27%) — ROC-AUC was misleading |
+| **KMeans (k=3)** | Initial HDBSCAN | Silhouette rose from 0.36 → 0.87 after retraining with 309k sessions |
+| **`balanced` as default** | `conservative` as default | Better onboarding without sacrificing quality for new users |
 
 ---
 
-## 🤝 9. Como Contribuir
+## 🤝 9. How to Contribute
 
-1. Faça um fork do projeto
-2. Crie uma branch (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'feat: adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+1. Fork the project
+2. Create a branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'feat: add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
-Leia o arquivo `CONTRIBUTING.md` para mais detalhes sobre o processo de contribuição e padrões de código.
+Read the `CONTRIBUTING.md` file for more details on the contribution process and code standards.
 
 ---
 
-## 📝 10. Licença e Autor
+## 📝 10. License and Author
 
-**Autor:** Isaque
-**Contato:** [![GitHub](https://img.shields.io/badge/GitHub-1isaqu-181717?logo=github)](https://github.com/1isaqu) [![LinkedIn](https://img.shields.io/badge/LinkedIn-Isaque-0A66C2?logo=linkedin)](https://www.linkedin.com/in/isaque-carvalho-silva/)
+**Author:** Isaque
+**Contact:** [![GitHub](https://img.shields.io/badge/GitHub-1isaqu-181717?logo=github)](https://github.com/1isaqu) [![LinkedIn](https://img.shields.io/badge/LinkedIn-Isaque-0A66C2?logo=linkedin)](https://www.linkedin.com/in/isaque-carvalho-silva/)
 
 ---
 
 <div align="center">
 
-**⭐ Se este projeto foi útil, considere deixar uma estrela!**
+**⭐ If this project was useful, consider leaving a star!**
 
-*Killswitch Engage — Do pipeline de dados à API em produção, com ML que funciona de verdade.*
+*Killswitch Engage — From the data pipeline to a production API, with ML that actually works.*
 
 </div>
