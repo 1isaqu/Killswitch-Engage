@@ -159,7 +159,7 @@ async def generate_final_production_chart():
         ),
     )
 
-    output_path = Path("reports/graficos_apresentaveis/19_cgan_final_reality_check.png")
+    output_path = Path("reports/figures/19_cgan_final_reality_check.png")
     fig.write_image(str(output_path), width=1250, height=800, scale=2)
 
     print(f"Gráfico final gerado em: {output_path}")
@@ -189,7 +189,7 @@ async def generate_final_production_chart():
         yaxis=dict(title="Erro Absoluto Médio (MAE)", showgrid=True),
         margin=dict(l=60, r=60, t=90, b=60),
     )
-    output_path2 = Path("reports/graficos_apresentaveis/20_cgan_error_reduction.png")
+    output_path2 = Path("reports/figures/20_cgan_error_reduction.png")
     fig2.write_image(str(output_path2), width=1000, height=600, scale=2)
     print(f"Gráfico de erro gerado em: {output_path2}")
 

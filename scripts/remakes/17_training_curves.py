@@ -6,8 +6,8 @@ import plotly.io as pio
 
 pio.templates.default = "plotly_white"
 
-PLOT_DIR_REMAKE = "../../reports/figures remake"
-PLOT_DIR_PRES = "../../reports/graficos_apresentaveis"
+PLOT_DIR_REMAKE = "../../reports/figures"
+PLOT_DIR_PRES = "../../reports/figures"
 os.makedirs(PLOT_DIR_REMAKE, exist_ok=True)
 
 np.random.seed(7)

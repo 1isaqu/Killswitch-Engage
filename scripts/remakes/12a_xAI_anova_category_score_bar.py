@@ -9,7 +9,7 @@ import scipy.stats as stats
 
 pio.templates.default = "plotly_white"
 
-PLOT_DIR = "../../reports/figures remake"
+PLOT_DIR = "../../reports/figures"
 os.makedirs(PLOT_DIR, exist_ok=True)
 
 global_layout = dict(

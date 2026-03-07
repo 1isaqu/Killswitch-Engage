@@ -89,7 +89,7 @@ A cGAN aprende esses padrões **a partir dos próprios comportamentos histórico
 - Código-fonte: [`scripts/meta_learning/cgan_model.py`](../../scripts/meta_learning/cgan_model.py)
 - Hiperparâmetros: [`scripts/meta_learning/hyperparameter_analysis.md`](../../scripts/meta_learning/hyperparameter_analysis.md)
 - Treinamento: [`scripts/meta_learning/train_cgan.py`](../../scripts/meta_learning/train_cgan.py)
-- Curvas de Treinamento: [`reports/graficos_apresentaveis/training_curves.png`](../graficos_apresentaveis/training_curves.png)
+- Curvas de Treinamento: [`reports/figures/training_curves.png`](../figures/training_curves.png)
 
 ---
 

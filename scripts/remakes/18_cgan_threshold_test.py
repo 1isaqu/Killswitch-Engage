@@ -50,7 +50,7 @@ def plot_threshold_distribution(thresholds):
         template="plotly_dark", font_family="Marat Sans", xaxis_range=[0.1, 0.9], showlegend=False
     )
 
-    output_path = Path("reports/graficos_apresentaveis/18_cgan_threshold_dist.png")
+    output_path = Path("reports/figures/18_cgan_threshold_dist.png")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     # Tenta salvar como PNG (requere kaleido)
     try:

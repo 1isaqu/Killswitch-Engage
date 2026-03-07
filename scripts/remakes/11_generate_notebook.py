@@ -35,7 +35,7 @@ for s in scripts:
     with open(s, "r", encoding="utf-8") as f:
         content = f.read()
     # To fix paths in notebook, replace PLOT_DIR relative path
-    content = content.replace("../../reports/figures remake", "reports/figures remake")
+    content = content.replace("../../reports/figures", "reports/figures")
     content = content.replace("../../data/", "data/")
     add_notebook_cell(content)
 

@@ -31,7 +31,7 @@ O gráfico `19_cgan_final_reality_check.png` é a "prova de fogo" do modelo:
 ### 📊 Relatórios e Gráficos
 - **Validação Completa**: [cGAN_VALIDACAO.md](file:///c:/Users/isaqu/.gemini/antigravity/scratch/steam_analysis/reports/cGAN_VALIDACAO.md)
 - **Decisões Técnicas**: [DECISOES_TECNICAS.md](file:///c:/Users/isaqu/.gemini/antigravity/scratch/steam_analysis/reports/DECISOES_TECNICAS.md)
-- **Gráficos de Operação**: `reports/graficos_apresentaveis/`
+- **Gráficos de Operação**: `reports/figures/`
   - `19_cgan_final_reality_check.png` (Fidelidade AI)
   - `20_cgan_error_reduction.png` (Ganho vs Modo Estático)
 

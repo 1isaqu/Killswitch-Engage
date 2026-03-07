@@ -1,6 +1,6 @@
 # Relatório: Análise de Relações Condicionais (Steam EDA V2.5)
 
-A análise multivariada profunda foi realizada sobre a base de dados tratada `imputed_dataset_v2.csv`. Respondemos as maiores perguntas de negócio do usuário com validações estritas (ANOVA, Kruskal-Wallis, Exponencial Logarítmica e Correlação Parcial) prontas para tunar o "Gerador Sintético de Dados Mimetizados".
+A análise multivariada profunda foi realizada sobre a base de dados tratada da Steam. Respondemos as maiores perguntas de negócio do usuário com validações estritas (ANOVA, Kruskal-Wallis, Exponencial Logarítmica e Correlação Parcial) prontas para tunar o "Gerador Sintético de Dados Mimetizados".
 
 ## 1. PREÇO POR CATEGORIA (ANOVA One-Way)
 *   **O que fizemos:** Boxplots identificando variações drásticas.
@@ -70,7 +70,9 @@ A análise multivariada profunda foi realizada sobre a base de dados tratada `im
 Usamos o motor analítico para remover "efeitos parasitas" (fatores confundidores de estatística) em cima das features celtas:
 *   **1. Preço vs Metacritic Score (CONTROLANDO FATOR "INDIE")**
     *   *Correlação de Pearson Líquida Anulando Viés de Estúdio Grande*: `r = 0.2038`.
-    *   *O que isso significa*: Existe uma fortíssima tendência na Crítica de alavancarem e "passarem pano" para inflações de jogos caros e derrubarem notas de produtos baratos APÓS a remoção de "peso sentimental" do Jogo Ser Indie! A crítica do MetaCritic é PAGA.
+```markdown
+    *   *O que isso significa*: "Metacritic é paga?" Calma. Não é isso que os dados provam, mas também não é algo que os dados descartam. Ao analisar a correlação entre preço e nota no Metacritic, controlando o fator "indie vs grande estúdio", encontramos uma associação positiva (r ≈ 0.20). Estatisticamente, isso significa que jogos mais caros tendem a receber notas ligeiramente maiores — mesmo quando removemos parte do viés estrutural de orçamento e escala. Isso não demonstra suborno nem manipulação deliberada, mas demonstra uma tendência. Por que jogos AAA parecem sofrer menos penalidade crítica? Será apenas maior polimento técnico ou existe um viés cognitivo inconsciente? Críticos são humanos e expectativas moldam a percepção. Um jogo de 200 milhões de dólares carrega peso cultural, hype e pressão de mercado; inconscientemente, isso pode influenciar o julgamento por contexto psicológico. A estatística não acusa nem inocenta automaticamente, ela apenas mostra um padrão pequeno e consistente acima do ruído. No fim, talvez a pergunta correta não seja "Metacritic é paga?", mas sim: até que ponto expectativas e escala influenciam a crítica — mesmo quando a intenção é ser neutra?
+```
 *   **2. Conquistas vs Playtime (CONTROLANDO FATOR "METACRITIC SCORE")**
     *   *Correlação*: `r = 0.0026`.
     *   *O que isso significa*: Fazer achievements num jogo ruim e fazer achievements num jogo absurdamente excelente (Nota 90 do Metacritic) GERA rigorosamente o NULO / MESMO efeito linear na vida retida de tela do usuário! Um jogo porco não é ignorado pela falta de achievements se você tirar a métrica pura! O Fator vício é indiferente às qualidades técnicas das features subjacentes.

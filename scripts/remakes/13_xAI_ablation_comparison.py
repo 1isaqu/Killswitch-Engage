@@ -6,7 +6,7 @@ import plotly.io as pio
 
 pio.templates.default = "plotly_white"
 
-PLOT_DIR = "../../reports/figures remake"
+PLOT_DIR = "../../reports/figures"
 os.makedirs(PLOT_DIR, exist_ok=True)
 
 # Mocked ablation study data
