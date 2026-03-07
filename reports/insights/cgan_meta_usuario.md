@@ -1,123 +1,123 @@
-# 🤖 O Meta-Usuário: Como a cGAN Personaliza Recomendações
+# 🤖 The Meta-User: How cGAN Personalizes Recommendations
 
-## O que é uma GAN?
+## What is a GAN?
 
-Uma **GAN** (*Generative Adversarial Network* — Rede Generativa Adversarial) é um tipo de inteligência artificial composta por **duas redes neurais que treinam em competição**:
+A **GAN** (*Generative Adversarial Network*) is a type of artificial intelligence composed of **two neural networks that train in competition**:
 
-| Componente | Papel | Analogia |
+| Component | Role | Analogy |
 |---|---|---|
-| **Gerador (G)** | Cria respostas candidatas | Um falsificador de dinheiro |
-| **Discriminador (D)** | Avalia se a resposta é boa ou não | Um policial bancário |
+| **Generator (G)** | Creates candidate responses | A money counterfeiter |
+| **Discriminator (D)** | Evaluates if the response is good or not | A bank police officer |
 
-O Gerador tenta enganar o Discriminador. O Discriminador tenta não ser enganado. Com o tempo, o Gerador fica tão bom que aprende a gerar respostas de alta qualidade — sem nunca ter visto a resposta certa explicitamente.
-
----
-
-## Por que usamos uma cGAN aqui?
-
-No Killswitch Engage, a cGAN (**Conditional** GAN) é usada como uma **Camada 4 de Meta-Aprendizado**. Ela não recomenda jogos diretamente. Ela responde uma pergunta mais sutil:
-
-> **"Qual é o threshold de corte ideal para recomendar jogos a *este* usuário específico?"**
-
-O sistema de recomendação usa um "threshold" (0.3 a 0.8) para decidir se um jogo é relevante o suficiente para aparecer na lista. Um threshold baixo = mais jogos, menos precisão. Um alto = menos jogos, mais precisão.
-
-A cGAN aprende automaticamente **qual valor usar para cada perfil de jogador**.
+The Generator tries to fool the Discriminator. The Discriminator tries not to be fooled. Over time, the Generator gets so good that it learns to generate high-quality responses — without ever explicitly seeing the right answer.
 
 ---
 
-## Como funciona na prática?
+## Why do we use a cGAN here?
 
-```
-Perfil do Usuário (Cluster KMeans + Estatísticas)
+In Killswitch Engage, the cGAN (**Conditional** GAN) is used as a **Layer 4 Meta-Learning** layer. It doesn't recommend games directly. It answers a more subtle question:
+
+> **"What is the ideal cutoff threshold to recommend games to *this* specific user?"**
+
+The recommendation system uses a "threshold" (0.3 to 0.8) to decide if a game is relevant enough to appear in the list. A low threshold = more games, less precision. A high threshold = fewer games, more precision.
+
+The cGAN automatically learns **what value to use for each player profile**.
+
+---
+
+## How does it work in practice?
+
+```text
+User Profile (KMeans Cluster + Statistics)
          │
          ▼
  ┌───────────────────┐
- │  ConditionEncoder │  ← Comprime o perfil em um vetor denso
+ │  ConditionEncoder │  ← Compresses the profile into a dense vector
  └───────────┬───────┘
              │
-             ├──── + Ruído Aleatório (Z)
+             ├──── + Random Noise (Z)
              │
              ▼
     ┌─────────────┐
-    │  Gerador    │  ← Propõe um threshold (ex: 0.57)
+    │  Generator  │  ← Proposes a threshold (e.g., 0.57)
     └──────┬──────┘
            │
            ▼
     ┌──────────────────┐
-    │  Discriminador   │  ← "Esse threshold parece ótimo para esse perfil?"
+    │  Discriminator   │  ← "Does this threshold look optimal for this profile?"
     └──────────────────┘
            │
     ┌──────┴──────┐
-    │  Real/Fake? │  ← Compara com os thresholds validados históricos
+    │  Real/Fake? │  ← Compares with historical validated thresholds
     └─────────────┘
 ```
 
 ---
 
-## Os 3 Arquétipos de Recomendação
+## The 3 Recommendation Archetypes
 
-A condição passada à cGAN inclui o modo escolhido pelo usuário:
+The condition passed to the cGAN includes the mode chosen by the user:
 
-| Modo | Threshold Tipico | Características |
+| Mode | Typical Threshold | Characteristics |
 |---|---|---|
-| 🛡️ **Conservador** | ~0.70 | Só acerta, recomenda poucos jogos |
-| ⚖️ **Equilibrado** | ~0.55 | Balanço entre precisão e descoberta |
-| 🗺️ **Aventureiro** | ~0.35 | Explora muito, aceita mais riscos |
+| 🛡️ **Conservative** | ~0.70 | Only hits, recommends few games |
+| ⚖️ **Balanced** | ~0.55 | Balance between precision and discovery |
+| 🗺️ **Adventurous** | ~0.35 | Explores a lot, accepts more risks |
 
 ---
 
-## Por que não simplesmente fixar o threshold?
+## Why not just fix the threshold?
 
-Porque jogadores diferentes têm tolerâncias diferentes. Um jogador veterano de RPG tem um perfil de qualidade altíssimo e rejeita jogos medianos. Um jogador casual quer variedade e aceita recomendações mais especulativas.
+Because different players have different tolerances. A veteran RPG player has a very high quality profile and rejects average games. A casual player wants variety and accepts more speculative recommendations.
 
-A cGAN aprende esses padrões **a partir dos próprios comportamentos históricos de cada cluster**, gerando um threshold personalizado em **~4ms** por requisição.
+The cGAN learns these patterns **from the historical behaviors of each cluster**, generating a personalized threshold in **~4ms** per request.
 
 ---
 
-## Resultados Comprovados
+## Proven Results
 
-- **PR-AUC do sistema completo:** `0.9153`
-- **Precision@10 com cGAN:** `0.70` (~7 de 10 recomendações certas)
+- **PR-AUC of the full system:** `0.9153`
+- **Precision@10 with cGAN:** `0.70` (~7 out of 10 right recommendations)
 - **NDCG@10:** `0.8006`
-- **Overhead de latência da cGAN:** `~4ms`
-- **Ganho projetado de Precision@K:** `+20%` vs threshold fixo
+- **cGAN latency overhead:** `~4ms`
+- **Projected Precision@K gain:** `+20%` vs fixed threshold
 
 ---
 
-## Referências Internas
+## Internal References
 
-- Código-fonte: [`scripts/meta_learning/cgan_model.py`](../../scripts/meta_learning/cgan_model.py)
-- Hiperparâmetros: [`scripts/meta_learning/hyperparameter_analysis.md`](../../scripts/meta_learning/hyperparameter_analysis.md)
-- Treinamento: [`scripts/meta_learning/train_cgan.py`](../../scripts/meta_learning/train_cgan.py)
-- Curvas de Treinamento: [`reports/figures/training_curves.png`](../figures/training_curves.png)
+- Source code: [`scripts/meta_learning/cgan_model.py`](../../scripts/meta_learning/cgan_model.py)
+- Hyperparameters: [`scripts/meta_learning/hyperparameter_analysis.md`](../../scripts/meta_learning/hyperparameter_analysis.md)
+- Training: [`scripts/meta_learning/train_cgan.py`](../../scripts/meta_learning/train_cgan.py)
+- Training Curves: [`reports/figures/training_curves.png`](../figures/training_curves.png)
 
 ---
 
-## 💡 Ideias Futuras (Próxima Iteração)
+## 💡 Future Ideas (Next Iteration)
 
-### cGAN Geradora de Meta-Usuários Sintéticos
+### cGAN as a Synthetic Meta-User Generator
 
-A visão original para a Fase 6 era usar a cGAN de forma ainda mais ambiciosa: em vez de apenas calibrar thresholds, ela **geraria perfis sintéticos de usuários** inteiros a partir de ruído latente.
+The original vision for Phase 6 was to use the cGAN even more ambitiously: instead of just calibrating thresholds, it would **generate entire synthetic user profiles** from latent noise.
 
-Esses usuários gerados seriam os verdadeiros **"meta-usuários"** — arquétipos aprendidos diretamente da distribuição do dataset real, representando padrões que talvez o KMeans sozinho não consiga capturar:
+These generated users would be the true **"meta-users"** — archetypes learned directly from the real dataset's distribution, representing patterns that perhaps KMeans alone couldn't capture:
 
+```text
+Random Noise Z  →  [cGAN Generator]  →  Synthetic User Profile
+                                        (genres, hours, frequency, cluster)
+                           ↕
+                  [cGAN Discriminator]  ←  Real Profiles from Dataset
 ```
-Ruído Aleatório Z  →  [Gerador cGAN]  →  Perfil Sintético de Usuário
-                                          (gêneros, horas, frequência, cluster)
-                             ↕
-                    [Discriminador cGAN]  ←  Perfis Reais do Dataset
-```
 
-**Papel do Gerador:**
-O Gerador teria como objetivo **generalizar ao máximo** os padrões do dataset real para criar perfis convincentes de usuários. Ele nunca vê os perfis reais diretamente — apenas recebe o sinal de erro do Discriminador e ajusta. O objetivo é produzir até um **máximo de N usuários sintéticos** plausíveis, sem memorizar nenhum perfil existente.
+**Role of the Generator:**
+The Generator would aim to **generalize the patterns** of the real dataset to create convincing user profiles. It never sees the real profiles directly — it only receives the error signal from the Discriminator and adjusts. The goal is to produce up to a **maximum of N plausible synthetic users**, without memorizing any existing profile.
 
-**Papel do Discriminador:**
-O Discriminador **não aprova nem repassa** os usuários gerados como contas reais. Seu único papel é **corrigir os erros do Gerador** — detectar quando um perfil sintético é implausível (ex: usuário com 5000h em RPG mas zero conquistas) e punir o Gerador por isso. Quando o treinamento termina, o Discriminador é descartado e apenas o Gerador é usado em produção.
+**Role of the Discriminator:**
+The Discriminator **does not approve or pass on** the generated users as real accounts. Its only role is to **correct the Generator's mistakes** — detect when a synthetic profile is implausible (e.g., a user with 5000h in RPG but zero achievements) and punish the Generator for it. When training finishes, the Discriminator is discarded and only the Generator is used in production.
 
-**Por que não foi implementado:**
-O banco Supabase (free tier) atingiu o limite de armazenamento com os 10.000 usuários reais e 309k sessões. Adicionar usuários gerados sinteticamente exigiria uma instância maior ou um pipeline de exportação offline.
+**Why it wasn't implemented:**
+The Supabase database (free tier) reached its storage limit with the 10,000 real users and 309k sessions. Adding synthetically generated users would require a larger instance or an offline export pipeline.
 
-**Potencial impacto:**
-- Enriquecer cold start para novos usuários com perfis sintéticos de alta qualidade
-- Testar o recomendador contra padrões de usuário nunca vistos
-- Descoberta de segmentos de usuário emergentes que o dataset atual não cobre
+**Potential impact:**
+- Enrich cold start for new users with high-quality synthetic profiles
+- Test the recommender against never-before-seen user patterns
+- Discovery of emerging user segments that the current dataset does not cover

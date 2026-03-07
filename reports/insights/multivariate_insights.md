@@ -1,78 +1,78 @@
-# Relatório: Análise de Relações Condicionais (Steam EDA V2.5)
+# Report: Conditional Relationships Analysis (Steam EDA V2.5)
 
-A análise multivariada profunda foi realizada sobre a base de dados tratada da Steam. Respondemos as maiores perguntas de negócio do usuário com validações estritas (ANOVA, Kruskal-Wallis, Exponencial Logarítmica e Correlação Parcial) prontas para tunar o "Gerador Sintético de Dados Mimetizados".
+In-depth multivariate analysis was performed on the treated Steam dataset. We answered the user's biggest business questions with strict validations (ANOVA, Kruskal-Wallis, Logarithmic Exponential, and Partial Correlation) ready to tune the "Synthetic Mimicked Data Generator".
 
-## 1. PREÇO POR CATEGORIA (ANOVA One-Way)
-*   **O que fizemos:** Boxplots identificando variações drásticas.
+## 1. PRICE BY CATEGORY (One-Way ANOVA)
+*   **What we did:** Boxplots identifying drastic variations.
 *   **Ranking (Top):**
     *   Remote Play on Tablet ($41.53 ± 35.24)
     *   Steam Trading Cards ($39.27 ± 35.26)
 *   **Ranking (Bottom):**
     *   In-App Purchases ($5.97 ± 18.78)
     *   MMO ($5.42 ± 17.43)
-*   **Conclusão (Teste ANOVA):** `F-Stat: 318.99 | p-value: 0.00`.
-*   **Interpretação:** Existem disparidades colossais de preços justificadas pela "Categoria" (Multi-player, MMO e In-App purchases tendem agressivamente para o lado Grátis, enquanto suporte a Cloud, Trading Cards ou Controllers tendem a custar caro - geralmente sendo marca base de jogos AAA/Indies Premiums).
-*   **Recomendação Sistêmica:** O Price sintético DEVE ser distribuído dinamicamente ponderando o vetor de Categories do app associado.
+*   **Conclusion (ANOVA Test):** `F-Stat: 318.99 | p-value: 0.00`.
+*   **Interpretation:** There are colossal price disparities justified by the "Category" (Multi-player, MMO, and In-App purchases aggressively tend towards the Free side, while support for Cloud, Trading Cards, or Controllers tend to be expensive - usually being the hallmark of AAA/Premium Indies).
+*   **Systemic Recommendation:** The synthetic Price MUST be distributed dynamically weighting the Categories vector of the associated app.
 
-![Boxplot Preço por Categoria](v2_smart_imputation/price_category_boxplot.png)
+![Boxplot Price by Category](v2_smart_imputation/price_category_boxplot.png)
 
-## 2. TEMPO MÉDIO POR GÊNERO (Kruskal-Wallis)
-*   **O que fizemos:** Rankeamento de engajamento absoluto isolando nicks zerados.
-*   **Top 5 Gêneros que mais "Viciam" o Player (Média Alta e Mediana Estável):**
+## 2. AVERAGE PLAYTIME BY GENRE (Kruskal-Wallis)
+*   **What we did:** Absolute engagement ranking isolating zeroed user-names.
+*   **Top 5 Genres that "Addict" the Player the most (High Mean and Stable Median):**
     1.  Massively Multiplayer (Median: 372 mins)
     2.  RPG (Median: 304 mins)
     3.  Strategy (Median: 294 mins)
     4.  Simulation (Median: 238 mins)
     5.  Early Access / Adventure (Median ~220 mins)
-*   **Teste de Kruskal-Wallis:** `H-Stat: 1464.03 | p-value: e-307`
-*   **Interpretação:** "Estratégia e RPG viciam mais que Action/FPS?". Absolutamente, a diferença é matematicamente comprovada e intransponível. Jogadores de FPS (Action) giram as partidas rápido e largam jogos (Mediana de 210 mins e Média de 560).
-*   **Recomendação Sistêmica:** O Gênero dita a equação principal para calcular o `Average playtime` nos modelos!
+*   **Kruskal-Wallis Test:** `H-Stat: 1464.03 | p-value: e-307`
+*   **Interpretation:** "Are Strategy and RPG more addictive than Action/FPS?". Absolutely, the difference is mathematically proven and insurmountable. FPS (Action) players cycle through matches quickly and drop games (Median of 210 mins and Mean of 560).
+*   **Systemic Recommendation:** Genre dictates the main equation to calculate `Average playtime` in the models!
 
-![Boxplot Tempo x Gênero](v2_smart_imputation/playtime_genre_boxplot.png)
+![Boxplot Playtime x Genre](v2_smart_imputation/playtime_genre_boxplot.png)
 
-## 3. AS MELHORES (E PIORES) DESENVOLVEDORAS (N ≥ 5)
-*   **O que fizemos:** Cruzamento para estabilidade de Quality Score entre devs com mais de 5 jogos criados na Steam.
-*   **O Padrão Ouro (Quem acerta quase sempre):** Playtouch (Média Positiva 19.7, N=10), Destructive Creations (Média 12.8, N=6). São casos de desenvolvedores cujos jogos despontam como incrivelmente bem recebidos.
-*   **O Fundo do Poço:** "&y", "100 Cozy Games", "11 bit studios". Diversos desses estúdios entregaram volumes grandes de jogos péssimos ou irrelevantes que flertam com Média 0 de Engajamento.
+## 3. THE BEST (AND WORST) DEVELOPERS (N >= 5)
+*   **What we did:** Crossing for Quality Score stability among devs with more than 5 games created on Steam.
+*   **The Gold Standard (Who almost always gets it right):** Playtouch (Positive Mean 19.7, N=10), Destructive Creations (Mean 12.8, N=6). These are cases of developers whose games emerge as incredibly well received.
+*   **Rock Bottom:** "&y", "100 Cozy Games", "11 bit studios". Several of these studios delivered large volumes of terrible or irrelevant games that flirt with 0 Engagement Mean.
 
-## 4. CONQUISTAS E RETENÇÃO
-*   **O que fizemos:** Plot discreto comparando se `Achievements` retém o jogador no game mais do que o normal (Pearson Linear & Spearman de Postos).
-*   **Medianas:**
-    *   Baixo (1-10 Conq.): 150 mins
-    *   Médio (11-50 Conq.): 226 mins
-    *   Alto (51-150 Conq.): 450 mins
-    *   Extremo (151-500 Conq.): 593 mins
+## 4. ACHIEVEMENTS AND RETENTION
+*   **What we did:** Discrete plot comparing if `Achievements` retain the player in the game more than normal (Linear Pearson & Spearman Rank).
+*   **Medians:**
+    *   Low (1-10 Achiev.): 150 mins
+    *   Medium (11-50 Achiev.): 226 mins
+    *   High (51-150 Achiev.): 450 mins
+    *   Extreme (151-500 Achiev.): 593 mins
 *   **Spearman Correlation = 0.332 (p=0.0)**
-*   **Interpretação:** O Coeficiente de Postos de **Spearman provou que NÃO há linearidade perfeita entre jogar mais e ganhar mais Achievements (Pearson pífio de 0.018)**. E sim que o relacionamento ocorre por "Tiers". Há claras escadas motivadoras, onde jogos com "pacotes" grandes de conquistas dobram a mediana de sobrevida.
-*   **Recomendação Sistêmica:** "Vale a pena investir em conquistas?" **MUITO.** O modelo de recomendação precisa incentivar jogos da Faixa 51-150 para usuários Hardcore (Eles retêm o jogador garantido acima das 7 horas).
+*   **Interpretation:** **Spearman's Rank Coefficient proved that there is NO perfect linearity between playing more and earning more Achievements (pitiful Pearson of 0.018)**. Rather, the relationship occurs by "Tiers". There are clear motivating steps, where games with large "packages" of achievements double the median survival life.
+*   **Systemic Recommendation:** "Is it worth investing in achievements?" **A LOT.** The recommendation model needs to encourage games in the 51-150 Range for Hardcore users (They retain the player guaranteed past 7 hours).
 
-![Barplot Conquistas](v2_smart_imputation/achievements_retention.png)
+![Barplot Achievements](v2_smart_imputation/achievements_retention.png)
 
-## 5. PREÇO VS NOTAS DA COMUNIDADE
-*   **O que fizemos:** Confirmamos a desconfiança de que o valor monetário do jogo NÃO se reverte em alegria para o gamer e identificaremos se The Witcher 3 se iguala a DOTA na mentalidade comunitária.
-*   **Percentual Positivo Médio da Base (The Score):**
-    *   Gratuito: 44.9% vs Alto ($20-$60): 63.3% vs AAA ($60+): 68.9%
+## 5. PRICE VS COMMUNITY SCORES
+*   **What we did:** We confirmed the suspicion that the monetary value of the game DOES NOT revert to joy for the gamer and will identify if The Witcher 3 equals DOTA in the community mentality.
+*   **Average Positive Percentage of the Base (The Score):**
+    *   Free: 44.9% vs High ($20-$60): 63.3% vs AAA ($60+): 68.9%
 *   **ANOVA p-val: 0.0**
-*   **Interpretação:** "Jogos caros realmente não são melhores?". **Mito derrubado!** Estatisticamente, jogos de maior precificação sofrem _menos hate_ em ratio. Jogos Grátis são bombardeados de Negative Reviews (44% de Score médio), provavelmente por barreira nula de entrada. Um jogo AAA premium garante ~69% de base aprovando-o.
-*   **Recomendação Sistêmica:** O Sistema de Recomendação não deve rebaixar os Grátis apenas pela Nota Absoluta. Ele tem que "normalizá-la". O Grátis carrega um peso social tóxico nativo.
+*   **Interpretation:** "Are expensive games really not better?". **Myth busted!** Statistically, higher-priced games suffer _less hate_ in ratio. Free games are bombarded with Negative Reviews (44% average Score), probably due to zero entry barrier. A premium AAA game guarantees ~69% of the base approving it.
+*   **Systemic Recommendation:** The Recommendation System should not downgrade Free games solely by Absolute Score. It has to "normalize" it. Free games carry a native toxic social weight.
 
 ![Violinplot Price vs Score](v2_smart_imputation/price_vs_score.png)
 
-## 6. POPULARIDADE VS VOLUME (Lei de Potência)
-*   **Interpretação:** Analisamos logs Base10 do Limite de Jogadores versus Base10 das Reviews que eles geram.
-*   **A Relação Real:** Calculou-se um R² de `0.5063` com Slope (Inclinação) log-log em `0.7794`.
-*   **O que isso significa:** Existe uma forte lei de potência (power law) no engajamento por review da Steam. Quando uma base de usuários cresce em **10x** (ex: 10 mil para 100 mil compras), o volume verbalizado de Reviews recebidas **não escala na mesma velocidade** perfeitamente, assumindo ritmo levemente retardado. 
-*   **Recomendador:** Os grandes jogos de massa ("The Last Of Us", "GTA") faturam com milhões de compras de jogadores "fantasmas", que nunca acessam para avaliar.
+## 6. POPULARITY VS VOLUME (Power Law)
+*   **Interpretation:** We analyzed Base10 logs of the Player Limit versus Base10 of the Reviews they generate.
+*   **The Real Relationship:** An R² of `0.5063` was calculated with Log-log Slope at `0.7794`.
+*   **What this means:** There is a strong power law in engagement per review on Steam. When a user base grows by **10x** (e.g. 10 thousand to 100 thousand sales), the vocalized volume of received Reviews **does not scale at the same speed** perfectly, assuming a slightly retarded rhythm.
+*   **Recommender:** Major mainstream games ("The Last Of Us", "GTA") profit from millions of purchases by "ghost" players, who never log in to review.
 
-![Scatterplot de Popularidade por Volume](reports/figures/popularity_volume.png)
+![Scatterplot of Popularity by Volume](reports/figures/popularity_volume.png)
 
-## 7. CORRELAÇÃO PARCIAL (Pingouin Multi-Variate)
-Usamos o motor analítico para remover "efeitos parasitas" (fatores confundidores de estatística) em cima das features celtas:
-*   **1. Preço vs Metacritic Score (CONTROLANDO FATOR "INDIE")**
-    *   *Correlação de Pearson Líquida Anulando Viés de Estúdio Grande*: `r = 0.2038`.
+## 7. PARTIAL CORRELATION (Pingouin Multi-Variate)
+We used the analytical engine to remove "parasitic effects" (statistical confounding factors) over core features:
+*   **1. Price vs Metacritic Score (CONTROLLING "INDIE" FACTOR)**
+    *   *Net Pearson Correlation Culling Large Studio Bias*: `r = 0.2038`.
 ```markdown
-    *   *O que isso significa*: "Metacritic é paga?" Calma. Não é isso que os dados provam, mas também não é algo que os dados descartam. Ao analisar a correlação entre preço e nota no Metacritic, controlando o fator "indie vs grande estúdio", encontramos uma associação positiva (r ≈ 0.20). Estatisticamente, isso significa que jogos mais caros tendem a receber notas ligeiramente maiores — mesmo quando removemos parte do viés estrutural de orçamento e escala. Isso não demonstra suborno nem manipulação deliberada, mas demonstra uma tendência. Por que jogos AAA parecem sofrer menos penalidade crítica? Será apenas maior polimento técnico ou existe um viés cognitivo inconsciente? Críticos são humanos e expectativas moldam a percepção. Um jogo de 200 milhões de dólares carrega peso cultural, hype e pressão de mercado; inconscientemente, isso pode influenciar o julgamento por contexto psicológico. A estatística não acusa nem inocenta automaticamente, ela apenas mostra um padrão pequeno e consistente acima do ruído. No fim, talvez a pergunta correta não seja "Metacritic é paga?", mas sim: até que ponto expectativas e escala influenciam a crítica — mesmo quando a intenção é ser neutra?
+    *   *What this means*: "Is Metacritic paid?" Calm down. That's not what the data proves, but neither is it something the data discards. When analyzing the correlation between price and Metacritic score, controlling the "indie vs large studio" factor, we found a positive association (r ≈ 0.20). Statistically, this means more expensive games tend to receive slightly higher scores — even when we strip away part of the structural bias of budget and scale. This doesn't demonstrate bribery or deliberate manipulation, but it does demonstrate a trend. Why do AAA games seem to suffer less critical penalty? Is it just greater technical polish or is there an unconscious cognitive bias? Critics are human and expectations mold perception. A 200 million dollar game carries cultural weight, hype, and market pressure; unconsciously, this might influence judgment via psychological context. Statistics don't automatically accuse or exonerate, they just show a small and consistent pattern above the noise. In the end, maybe the right question isn't "is Metacritic paid?", but rather: to what extent do expectations and scale influence critique — even when the intent is to be neutral?
 ```
-*   **2. Conquistas vs Playtime (CONTROLANDO FATOR "METACRITIC SCORE")**
-    *   *Correlação*: `r = 0.0026`.
-    *   *O que isso significa*: Fazer achievements num jogo ruim e fazer achievements num jogo absurdamente excelente (Nota 90 do Metacritic) GERA rigorosamente o NULO / MESMO efeito linear na vida retida de tela do usuário! Um jogo porco não é ignorado pela falta de achievements se você tirar a métrica pura! O Fator vício é indiferente às qualidades técnicas das features subjacentes.
+*   **2. Achievements vs Playtime (CONTROLLING "METACRITIC SCORE" FACTOR)**
+    *   *Correlation*: `r = 0.0026`.
+    *   *What this means*: Unlocking achievements in a terrible game and unlocking achievements in an absurdly excellent game (Metacritic Score 90) GENERATES strictly the NULL / SAME linear effect on the user's retained screen life! A trash game is not ignored due to lack of achievements if you strip the pure metric! The addiction factor is indifferent to the technical qualities of underlying features.

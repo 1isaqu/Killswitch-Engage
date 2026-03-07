@@ -16,13 +16,13 @@ except:
 
 # 8b. Split Price Distribution by Category
 expensive = [
-    "Animação & Modelagem",
-    "Design & Ilustração",
-    "Utilitários",
-    "Acesso Antecipado",
-    "Simulação",
+    "Animation & Modeling",
+    "Design & Illustration",
+    "Utilities",
+    "Early Access",
+    "Simulation",
 ]
-cheap = ["Casual", "Indie", "MMO", "Corrida", "Esportes"]
+cheap = ["Casual", "Indie", "MMO", "Racing", "Sports"]
 
 np.random.seed(42)
 
@@ -35,20 +35,20 @@ def generate_data(cats, base_mean, step):
         for p in prices:
             if p > 0:
                 data.append((cat, p))
-    return pd.DataFrame(data, columns=["Categoria", "Preço (US$)"])
+    return pd.DataFrame(data, columns=["Category", "Price (US$)"])
 
 
 df_exp = generate_data(expensive, 60, 5)
 df_chp = generate_data(cheap, 20, 2)
 
-# Top 5 Caras
+# Top 5 Expensive
 fig_exp = px.box(
     df_exp,
-    x="Preço (US$)",
-    y="Categoria",
-    color="Categoria",
+    x="Price (US$)",
+    y="Category",
+    color="Category",
     orientation="h",
-    title="💎 Top 5 Categorias Mais Caras da Steam",
+    title="💎 Top 5 Most Expensive Steam Categories",
 )
 fig_exp.update_layout(showlegend=False, font=dict(family="Marat Sans", size=14))
 fig_exp.update_yaxes(categoryorder="median ascending")
@@ -56,14 +56,14 @@ fig_exp.write_image(
     os.path.join(PLOT_DIR, "08b_xAI_price_top5_expensive.png"), width=800, height=400, scale=2
 )
 
-# Top 5 Baratas
+# Top 5 Cheap
 fig_chp = px.box(
     df_chp,
-    x="Preço (US$)",
-    y="Categoria",
-    color="Categoria",
+    x="Price (US$)",
+    y="Category",
+    color="Category",
     orientation="h",
-    title="🏷️ Top 5 Categorias Mais Acessíveis da Steam",
+    title="🏷️ Top 5 Most Affordable Steam Categories",
 )
 fig_chp.update_layout(showlegend=False, font=dict(family="Marat Sans", size=14))
 fig_chp.update_yaxes(categoryorder="median ascending")

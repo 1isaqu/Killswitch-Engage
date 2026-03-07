@@ -23,7 +23,7 @@ try:
 except:
     df = pd.DataFrame()
 
-# 6. Power Law: Owners vs Reviews — Portuguese, log10 ticks, legend, annotation
+# 6. Power Law: Owners vs Reviews — EN, log10 ticks, legend, annotation
 np.random.seed(42)
 x_owners = np.random.lognormal(mean=10, sigma=2, size=500)
 y_reviews = 0.7794 * x_owners + np.random.normal(0, x_owners * 0.5)
@@ -42,7 +42,7 @@ fig6.add_trace(
         mode="markers",
         opacity=0.5,
         marker=dict(color="steelblue", size=5),
-        name="Jogos",
+        name="Games",
     )
 )
 
@@ -53,7 +53,7 @@ fig6.add_trace(
         y=log_y_reg,
         mode="lines",
         line=dict(color="crimson", width=3),
-        name="Regressão (slope = 0.7794)",
+        name="Regression (slope = 0.7794)",
     )
 )
 
@@ -65,7 +65,7 @@ fig6.add_trace(
         y=np.log10(y_reviews[outlier_idx]),
         mode="markers",
         marker=dict(color="orange", size=12, line=dict(color="DarkSlateGrey", width=2)),
-        name="Outliers Positivos",
+        name="Positive Outliers",
     )
 )
 
@@ -74,22 +74,22 @@ tick_vals = [0, 1, 2, 3, 4, 5, 6]
 tick_text = ["1", "10", "100", "1K", "10K", "100K", "1M"]
 
 fig6.update_layout(
-    title="📉 Lei de Potência: Donos Estimados vs Reviews Recebidos<br><sup>Slope = 0.7794 | R² = 0.5063 — quanto mais popular, mais avaliado (mas não proporcionalmente)</sup>",
+    title="📉 Power Law: Estimated Owners vs Reviews Received<br><sup>Slope = 0.7794 | R² = 0.5063 — the more popular, the more reviewed (but not proportionally)</sup>",
     xaxis=dict(
-        title="Donos Estimados (escala log₁₀)",
+        title="Estimated Owners (log₁₀ scale)",
         tickvals=tick_vals,
         ticktext=tick_text,
         showgrid=True,
     ),
     yaxis=dict(
-        title="Total de Reviews (escala log₁₀)",
+        title="Total Reviews (log₁₀ scale)",
         tickvals=tick_vals,
         ticktext=tick_text,
         showgrid=True,
     ),
     font=dict(family="Marat Sans", size=14),
     legend=dict(
-        title="<b>Legenda</b>",
+        title="<b>Legend</b>",
         bgcolor="rgba(255,255,255,0.85)",
         bordercolor="lightgray",
         borderwidth=1,

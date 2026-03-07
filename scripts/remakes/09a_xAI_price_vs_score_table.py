@@ -8,45 +8,45 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # 09a. User Score vs Category (Ranked Markdown Table)
 categories = [
-    "Aventura",
-    "Estratégia",
+    "Adventure",
+    "Strategy",
     "RPG",
     "MMO",
     "Indie",
     "Casual",
-    "Simulação",
-    "Ação",
-    "Esportes",
-    "Corrida",
+    "Simulation",
+    "Action",
+    "Sports",
+    "Racing",
 ]
 
 # Simulated analytical means matching the prompt request to recreate the exact table
 data = {
     "Category": [
-        "Aventura",
-        "Estratégia",
+        "Adventure",
+        "Strategy",
         "RPG",
         "MMO",
         "Indie",
         "Casual",
-        "Simulação",
-        "Ação",
-        "Esportes",
-        "Corrida",
+        "Simulation",
+        "Action",
+        "Sports",
+        "Racing",
     ],
     "Mean Score": [95, 90, 85, 85, 80, 85, 72, 80, 85, 90],
     "Vs Avg": ["🔺 +15", "🔺 +10", "🔺 +5", "🔺 +5", "➖ 0", "🔺 +5", "🔻 -8", "➖ 0", "🔺 +5", "🔺 +10"],
     "Highlight": [
-        "A categoria queridinha",
-        "Estratégia agrada",
-        "Clássico sólido",
-        "Comunidade engajada",
-        "Padrão da plataforma",
-        "Surpreendentemente alto",
-        "Abaixo da média",
-        "Média estável",
-        "Fãs fiéis",
-        "Corrida agrada",
+        "The beloved category",
+        "Strategy pleases",
+        "Solid classic",
+        "Engaged community",
+        "Platform standard",
+        "Surprisingly high",
+        "Below average",
+        "Stable average",
+        "Loyal fans",
+        "Racing pleases",
     ],
 }
 
@@ -63,7 +63,7 @@ This table provides a rapidly scannable summary of the complex Violin plot for U
 
 {markdown_table}
 
-*Vantagem: Leitor escaneia em 5 segundos.*
+*Advantage: Reader scans in 5 seconds.*
 """
 
 out_path = os.path.join(OUTPUT_DIR, "09a_xAI_price_vs_category_ranked_table.md")

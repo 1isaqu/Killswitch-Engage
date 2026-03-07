@@ -8,21 +8,21 @@ PLOT_DIR = "../../reports/figures"
 os.makedirs(PLOT_DIR, exist_ok=True)
 
 header = [
-    "<b>Threshold<br>(Rigor)</b>",
-    "<b>Precision<br>(Acertos)</b>",
-    "<b>Recall<br>(Alcance)</b>",
-    "<b>F1 Score<br>(Balanço)</b>",
-    "<b>Interpretação Prática</b>",
+    "<b>Threshold<br>(Strictness)</b>",
+    "<b>Precision<br>(Accuracy)</b>",
+    "<b>Recall<br>(Reach)</b>",
+    "<b>F1 Score<br>(Balance)</b>",
+    "<b>Practical Interpretation</b>",
 ]
 
-thresholds = ["0.3", "0.5 (Padrão)", "0.7"]
+thresholds = ["0.3", "0.5 (Default)", "0.7"]
 precisions = ["75%", "84%", "92%"]
 recalls = ["90%", "80%", "60%"]
 f1s = ["0.82", "0.82", "0.73"]
 interpretations = [
-    "Acha muitos jogos pro usuário, mas envia várias recomendações ruins (foco em descobrir tudo).",
-    "Equilíbrio ideal: erra pouco e ainda consegue recomendar uma boa quantidade de jogos.",
-    "Só recomenda se tiver certeza absoluta. Excelente precisão, mas ignora muitos jogos bons.",
+    "Finds many games for the user, but sends several bad ones (focus on discovering everything).",
+    "Ideal balance: few mistakes while still recommending a good amount of games.",
+    "Only recommends if absolutely certain. High precision, but ignores many good games.",
 ]
 
 fig = go.Figure(
@@ -48,7 +48,7 @@ fig = go.Figure(
 )
 
 fig.update_layout(
-    title="🎯 Como o Rigor do Algoritmo Afeta as Recomendações",
+    title="🎯 How Algorithm Strictness Affects Recommendations",
     margin=dict(l=20, r=20, t=50, b=20),
     font=dict(family="Marat Sans"),
 )

@@ -10,30 +10,30 @@ os.makedirs(PLOT_DIR, exist_ok=True)
 
 # Data for the table
 categories = [
-    "Aventura",
-    "Estratégia",
-    "Corrida",
+    "Adventure",
+    "Strategy",
+    "Racing",
     "RPG",
     "Casual",
     "MMO",
-    "Esportes",
+    "Sports",
     "Indie",
-    "Ação",
-    "Simulação",
+    "Action",
+    "Simulation",
 ]
 mean_scores = [95, 90, 90, 85, 85, 85, 85, 80, 80, 72]
 vs_avg = ["🔺 +15", "🔺 +10", "🔺 +10", "🔺 +5", "🔺 +5", "🔺 +5", "🔺 +5", "➖ 0", "➖ 0", "🔻 -8"]
 highlights = [
-    "A categoria queridinha",
-    "Estratégia agrada",
-    "Corrida agrada",
-    "Clássico sólido",
-    "Surpreendentemente alto",
-    "Comunidade engajada",
-    "Fãs fiéis",
-    "Padrão da plataforma",
-    "Média estável",
-    "Abaixo da média",
+    "The beloved category",
+    "Strategy pleases",
+    "Racing pleases",
+    "Solid classic",
+    "Surprisingly high",
+    "Engaged community",
+    "Loyal fans",
+    "Platform standard",
+    "Stable average",
+    "Below average",
 ]
 
 fig = go.Figure(
@@ -41,10 +41,10 @@ fig = go.Figure(
         go.Table(
             header=dict(
                 values=[
-                    "<b>Categoria</b>",
-                    "<b>Nota Média</b>",
-                    "<b>vs Média Geral</b>",
-                    "<b>Destaque</b>",
+                    "<b>Category</b>",
+                    "<b>Mean Score</b>",
+                    "<b>vs General Average</b>",
+                    "<b>Highlight</b>",
                 ],
                 fill_color="#004080",
                 align="left",
@@ -62,7 +62,7 @@ fig = go.Figure(
 )
 
 fig.update_layout(
-    title="🕹️ Categorias com Melhores Avaliações (Rankeadas)",
+    title="🕹️ Best-Rated Categories (Ranked)",
     margin=dict(l=20, r=20, t=50, b=20),
     font=dict(family="Marat Sans"),
 )

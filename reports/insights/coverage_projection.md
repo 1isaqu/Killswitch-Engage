@@ -1,83 +1,83 @@
-# Projecao de Cobertura do Catalogo - Lei de Potencia
+# Catalog Coverage Projection - Power Law
 
-**Data:** 05/03/2026 | **Modo:** aventureiro (threshold=0.3) | **k=10 recomendacoes/usuario**
+**Date:** 03/05/2026 | **Mode:** adventurous (threshold=0.3) | **k=10 recommendations/user**
 
-## Contexto
+## Context
 
-O experimento demonstra que a baixa cobertura atual (3.08% com 10,000 usuarios) e uma consequencia natural do volume de usuarios de treinamento sintetico, nao um defeito do modelo. A cobertura segue uma **lei de potencia** mensuravel e projetavel.
-
----
-
-## Dados Coletados (Experimento Real)
-
-|   n_usuarios |   jogos_unicos |   cobertura_pct |
-|-------------:|---------------:|----------------:|
-|      100.000 |        633.000 |           0.517 |
-|      300.000 |       1230.000 |           1.004 |
-|      500.000 |       1565.000 |           1.277 |
-|      800.000 |       1938.000 |           1.582 |
-|     1000.000 |       2148.000 |           1.753 |
-|     2000.000 |       2733.000 |           2.231 |
-|     3000.000 |       3021.000 |           2.466 |
-|     5000.000 |       3300.000 |           2.694 |
-|     8000.000 |       3605.000 |           2.943 |
-|    10000.000 |       3768.000 |           3.076 |
-
-> Pontos calculados com usuarios reais do ranker LightFM, amostra aleatoria com seed=42.
+The experiment demonstrates that the current low coverage (3.08% with 10,000 users) is a natural consequence of the synthetic training user volume, not a model defect. Coverage follows a measurable and projectable **power law**.
 
 ---
 
-## Parametros da Regressao Log-Log
+## Collected Data (Real Experiment)
 
-| Parametro | Valor | Interpretacao |
+|   n_users |   unique_games |   coverage_pct |
+|----------:|-------------:|---------------:|
+|   100,000 |      633,000 |          0.517 |
+|   300,000 |    1,230,000 |          1.004 |
+|   500,000 |    1,565,000 |          1.277 |
+|   800,000 |    1,938,000 |          1.582 |
+| 1,000,000 |    2,148,000 |          1.753 |
+| 2,000,000 |    2,733,000 |          2.231 |
+| 3,000,000 |    3,021,000 |          2.466 |
+| 5,000,000 |    3,300,000 |          2.694 |
+| 8,000,000 |    3,605,000 |          2.943 |
+|10,000,000 |    3,768,000 |          3.076 |
+
+> Points calculated with real users from the LightFM ranker, random sample with seed=42.
+
+---
+
+## Log-Log Regression Parameters
+
+| Parameter | Value | Interpretation |
 |-----------|-------|---------------|
-| **a (expoente)** | `0.3673` | Crescimento sublinear: cada 10x usuarios aumenta cobertura em ~2.3x |
-| **b (intercepto)** | `-2.1099` | Escala base do modelo |
-| **R2** | `0.9474` | O modelo explica **94.7%** da variacao observada |
-| **Equacao** | `log(cob) = 0.3673 * log(n) + -2.1099` | Forma potencia: `cob = exp(-2.1099) * n^0.3673` |
+| **a (exponent)** | `0.3673` | Sublinear growth: every 10x users increases coverage by ~2.3x |
+| **b (intercept)** | `-2.1099` | Base scale of the model |
+| **R2** | `0.9474` | The model explains **94.7%** of the observed variation |
+| **Equation** | `log(cov) = 0.3673 * log(n) + -2.1099` | Power form: `cov = exp(-2.1099) * n^0.3673` |
 
-OK R2 > 0.9: projecao CONFIAVEL — modelo explica +90% da variacao
+OK R2 > 0.9: projection RELIABLE — model explains +90% of variation
 
-OK Expoente 0.3-0.5: confirma regime de lei de potencia sublinear (Long-Tail)
+OK Exponent 0.3-0.5: confirms sublinear power law regime (Long-Tail)
 
 ---
 
-## Projecoes de Cobertura
+## Coverage Projections
 
-|   n_usuarios |   cobertura_central_pct |   ic_95_lower_pct |   ic_95_upper_pct |
-|-------------:|------------------------:|------------------:|------------------:|
-|     100000.0 |                     8.3 |               6.4 |              10.9 |
-|     500000.0 |                    15.0 |              11.5 |              19.7 |
-|    1000000.0 |                    19.4 |              14.8 |              25.4 |
-|    2000000.0 |                    25.0 |              19.1 |              32.7 |
-|    5000000.0 |                    35.0 |              26.8 |              45.8 |
-|   10000000.0 |                    45.2 |              34.5 |              59.1 |
+|     n_users |   central_coverage_pct |   95_ci_lower_pct |   95_ci_upper_pct |
+|------------:|-----------------------:|------------------:|------------------:|
+|     100,000 |                    8.3 |               6.4 |              10.9 |
+|     500,000 |                   15.0 |              11.5 |              19.7 |
+|   1,000,000 |                   19.4 |              14.8 |              25.4 |
+|   2,000,000 |                   25.0 |              19.1 |              32.7 |
+|   5,000,000 |                   35.0 |              26.8 |              45.8 |
+|  10,000,000 |                   45.2 |              34.5 |              59.1 |
 
-> **IC 95%** calculado com base nos residuos da regressao (se=0.1370).
+> **95% CI** calculated based on regression residuals (se=0.1370).
 
-### Ponto critico: quantos usuarios para 15%?
+### Critical point: how many users for 15%?
 
-> **Resposta: aprox. 497,364 usuarios (~0.5 milhoes)**
+> **Answer: approx. 497,364 users (~0.5 million)**
 >
-> Confirmando que as estimativas iniciais de 15-20% para milhoes de usuarios sao **realistas e fundamentadas**.
+> Confirming that the initial estimates of 15-20% for millions of users are **realistic and grounded**.
 
 ---
 
-## Graficos
+## Charts
 
-![Cobertura Linear](../figures/coverage_linear.png)
+![Linear Coverage](../figures/coverage_linear.png)
 ![Log-Log](../figures/coverage_loglog.png)
-![Projecao com IC](../figures/coverage_projection_with_ci.png)
+![Projection with CI](../figures/coverage_projection_with_ci.png)
 
 ---
 
-## Conclusao
+## Conclusion
 
-O experimento comprova que:
+The experiment proves that:
 
-1. **O modelo nao tem defeito de cobertura** — a concentracao em ~3,768 jogos e esperada com dados sinteticos.
-2. **A lei de potencia se confirma** (R2 = 0.9474), mostrando crescimento previsivel.
-3. **Com 0.5M de usuarios reais**, a cobertura atingiria 15%, validando as estimativas de negocio.
-4. O expoente **a = 0.3673** confirma o regime de cauda longa (Long-Tail) tipico de sistemas de recomendacao.
+1. **The model has no coverage defect** — the concentration in ~3,768 games is expected with synthetic data.
+2. **The power law is confirmed** (R2 = 0.9474), showing predictable growth.
+3. **With 0.5M real users**, coverage would reach 15%, validating business estimates.
+4. The exponent **a = 0.3673** confirms the long-tail regime typical of recommendation systems.
 
-*Gerado automaticamente por `scripts/analysis/coverage_regression.py`.*
+*Auto-generated by `scripts/analysis/coverage_regression.py`.*

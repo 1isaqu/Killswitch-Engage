@@ -26,24 +26,24 @@ except:
 # 5. Playtime by Genre
 # MMO, RPG and Strategy lead
 np.random.seed(42)
-genres = ["MMO", "RPG", "Estratégia", "Ação", "Aventura", "Indie"]
+genres = ["MMO", "RPG", "Strategy", "Action", "Adventure", "Indie"]
 data = []
 for i, g in enumerate(genres):
     base = 100 - i * 15
     vals = np.random.lognormal(mean=np.log(base), sigma=0.8, size=200)
     data.extend([(g, v) for v in vals if v < 500])
 
-df_genre = pd.DataFrame(data, columns=["Gênero", "Tempo Jogado"])
+df_genre = pd.DataFrame(data, columns=["Genre", "Playtime"])
 
 fig5 = px.box(
     df_genre,
-    x="Gênero",
-    y="Tempo Jogado",
-    color="Gênero",
-    title="🎮 Retenção por Gênero (Mediana de Tempo de Jogo)<br><sup>MMO, RPG e Estratégia lideram o engajamento</sup>",
+    x="Genre",
+    y="Playtime",
+    color="Genre",
+    title="🎮 Retention by Genre (Median Playtime)<br><sup>MMO, RPG, and Strategy lead in engagement</sup>",
 )
 fig5.update_layout(font=dict(family="Marat Sans", size=14), showlegend=False)
-fig5.update_yaxes(title="Horas Jogadas")
-fig5.update_xaxes(title="Gênero")
+fig5.update_yaxes(title="Hours Played")
+fig5.update_xaxes(title="Genre")
 
 fig5.write_image(PLOT_DIR + "/playtime_genre_boxplot.png", width=1200, height=600, scale=2)

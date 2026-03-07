@@ -23,23 +23,23 @@ try:
 except:
     df = pd.DataFrame()
 
-# 8. Distribuição de Preço por Categoria
+# 8. Price Distribution by Category
 categories = [
-    "Simulação",
-    "Estratégia",
+    "Simulation",
+    "Strategy",
     "RPG",
-    "Ação",
-    "Aventura",
-    "Esportes",
-    "Corrida",
+    "Action",
+    "Adventure",
+    "Sports",
+    "Racing",
     "MMO",
     "Indie",
     "Casual",
-    "Acesso Antecipado",
-    "Utilitários",
-    "Design & Ilustração",
-    "Animação & Modelagem",
-    "Educação",
+    "Early Access",
+    "Utilities",
+    "Design & Illustration",
+    "Animation & Modeling",
+    "Education",
 ]
 prices = []
 for i in range(15):
@@ -47,17 +47,17 @@ for i in range(15):
     prices.append(np.random.normal(loc=mean_val, scale=10, size=50))
 
 df_prices = pd.DataFrame(
-    [(categories[i], p) for i in range(15) for p in prices[i]], columns=["Categoria", "Preço"]
+    [(categories[i], p) for i in range(15) for p in prices[i]], columns=["Category", "Price"]
 )
-df_prices = df_prices[df_prices["Preço"] > 0]
+df_prices = df_prices[df_prices["Price"] > 0]
 
 fig8 = px.box(
     df_prices,
-    x="Preço",
-    y="Categoria",
-    color="Categoria",
+    x="Price",
+    y="Category",
+    color="Category",
     orientation="h",
-    title="💰 Distribuição de Preço por Categoria<br><sup>Top 15 categorias mais caras vs mais baratas</sup>",
+    title="💰 Price Distribution by Category<br><sup>Top 15 most vs least expensive categories</sup>",
 )
 fig8.update_layout(showlegend=False, font=dict(family="Marat Sans", size=14))
 fig8.update_yaxes(categoryorder="median ascending")

@@ -23,15 +23,15 @@ try:
 except:
     df = pd.DataFrame()
 
-# 12. ANOVA One-Way — Nota do Usuário por Categoria (PT-BR)
+# 12. ANOVA One-Way — User Score by Category (EN)
 categories = [
-    "Simulação",
-    "Estratégia",
+    "Simulation",
+    "Strategy",
     "RPG",
-    "Ação",
-    "Aventura",
-    "Esportes",
-    "Corrida",
+    "Action",
+    "Adventure",
+    "Sports",
+    "Racing",
     "MMO",
     "Indie",
     "Casual",
@@ -47,38 +47,38 @@ for i, cat in enumerate(categories):
     for s in scores:
         anova_data.append((cat, s))
 
-df_anova = pd.DataFrame(anova_data, columns=["Categoria", "Nota do Usuário"])
+df_anova = pd.DataFrame(anova_data, columns=["Category", "User Score"])
 
 # ANOVA one-way para exibir p-valor
-cat_groups = [df_anova[df_anova["Categoria"] == c]["Nota do Usuário"] for c in categories]
+cat_groups = [df_anova[df_anova["Category"] == c]["User Score"] for c in categories]
 f_stat, p_value = stats.f_oneway(*cat_groups)
 
 p_text = f"ANOVA p < 0.001" if p_value < 0.001 else f"ANOVA p = {p_value:.3f}"
 
 fig12 = px.violin(
     df_anova,
-    x="Categoria",
-    y="Nota do Usuário",
-    color="Categoria",
+    x="Category",
+    y="User Score",
+    color="Category",
     box=True,
-    title=f"📊 ANOVA One-Way: Nota do Usuário por Categoria de Jogo<br><sup>Variância significativa entre gêneros ({p_text})</sup>",
-    category_orders={"Categoria": categories},
+    title=f"📊 ANOVA One-Way: User Score by Game Category<br><sup>Significant variance across genres ({p_text})</sup>",
+    category_orders={"Category": categories},
 )
 
 fig12.update_layout(
     showlegend=False,
     font=dict(family="Marat Sans", size=14),
-    xaxis_title="Categoria do Jogo",
-    yaxis_title="Nota do Usuário (0–100)",
+    xaxis_title="Game Category",
+    yaxis_title="User Score (0–100)",
 )
 fig12.update_xaxes(tickangle=45)
 
-overall_mean = df_anova["Nota do Usuário"].mean()
+overall_mean = df_anova["User Score"].mean()
 fig12.add_hline(
     y=overall_mean,
     line_dash="dash",
     line_color="gray",
-    annotation_text=f"Média Geral ({overall_mean:.1f})",
+    annotation_text=f"Overall Mean ({overall_mean:.1f})",
 )
 
 fig12.write_image(

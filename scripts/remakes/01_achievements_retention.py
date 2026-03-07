@@ -23,8 +23,8 @@ try:
 except:
     df = pd.DataFrame()
 
-# 1. Impacto das Conquistas no Tempo de Jogo
-categories = ["0 conquistas", "1–10", "11–50", "51–150", ">150"]
+# 1. Impact of Achievements on Playtime
+categories = ["0 achievements", "1–10", "11–50", "51–150", ">150"]
 playtimes = [150, 200, 350, 600, 400]
 colors = ["#FFC080", "#FFA040", "#FF8000", "#CC6600", "#994C00"]
 
@@ -40,13 +40,13 @@ fig1.add_trace(
 )
 
 fig1.add_hline(
-    y=300, line_dash="dash", line_color="gray", annotation_text="Média da Plataforma (300 min)"
+    y=300, line_dash="dash", line_color="gray", annotation_text="Platform Average (300 min)"
 )
 
 fig1.update_layout(
-    title="🏆 Impacto das Conquistas no Tempo de Jogo<br><sup>Jogos com 51–150 conquistas retêm jogadores 4× mais do que jogos básicos</sup>",
-    yaxis_title="Tempo de Jogo (minutos)",
-    xaxis_title="Faixa de Conquistas",
+    title="🏆 Impact of Achievements on Playtime<br><sup>Games with 51–150 achievements retain players 4x more than basic games</sup>",
+    yaxis_title="Playtime (minutes)",
+    xaxis_title="Achievement Range",
     font=dict(family="Marat Sans", size=14),
 )
 

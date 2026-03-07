@@ -23,8 +23,8 @@ try:
 except:
     df = pd.DataFrame()
 
-# 10. Confiança da Imputação de Gêneros
-labels = ["Alta Confiança (Original + Especialistas)", "Baixa Confiança (Ensemble)"]
+# 10. Genre Imputation Confidence
+labels = ["High Confidence (Original + Experts)", "Low Confidence (Ensemble)"]
 values = [93, 7]
 
 fig10 = go.Figure(
@@ -39,7 +39,7 @@ fig10 = go.Figure(
     ]
 )
 fig10.update_layout(
-    title="✅ Confiança da Imputação — Gêneros<br><sup>93% de alta confiança (dados originais + especialistas)</sup>",
+    title="✅ Genre Imputation Confidence<br><sup>93% high confidence (original data + experts)</sup>",
     font=dict(family="Marat Sans", size=14),
 )
 

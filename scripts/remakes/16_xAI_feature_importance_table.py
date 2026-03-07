@@ -8,9 +8,9 @@ PLOT_DIR = "../../reports/figures"
 os.makedirs(PLOT_DIR, exist_ok=True)
 
 header = [
-    "<b>Variável Original (Inglês)</b>",
-    "<b>Significado Prático</b>",
-    "<b>Grau de Importância na IA</b>",
+    "<b>Original Feature (English)</b>",
+    "<b>Practical Meaning</b>",
+    "<b>AI Importance Level</b>",
 ]
 
 originais = [
@@ -22,14 +22,14 @@ originais = [
     "achievements",
 ]
 significados = [
-    "Número total de recomendações dos jogadores",
-    "Tempo médio histórico de jogo",
-    "Preço base de venda do jogo",
-    "Pico de jogadores simultâneos atingido",
-    "Nota média da crítica especializada",
-    "Quantidade de conquistas destraváveis",
+    "Total number of player recommendations",
+    "Historical average playtime",
+    "Base game price",
+    "Peak concurrent users reached",
+    "Average score from specialized critics",
+    "Number of unlockable achievements",
 ]
-importancias = ["🚨 Altíssimo", "🚨 Altíssimo", "🔥 Alto", "🔥 Alto", "⚡ Médio", "⚡ Médio"]
+importancias = ["🚨 Very High", "🚨 Very High", "🔥 High", "🔥 High", "⚡ Medium", "⚡ Medium"]
 
 fig = go.Figure(
     data=[
@@ -53,7 +53,7 @@ fig = go.Figure(
 )
 
 fig.update_layout(
-    title="🧠 O que a Inteligência Artificial Considera Mais Importante?",
+    title="🧠 What Does the Artificial Intelligence Consider Most Important?",
     margin=dict(l=20, r=20, t=50, b=20),
     font=dict(family="Marat Sans"),
 )

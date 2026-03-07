@@ -27,7 +27,7 @@ except:
 fig4 = make_subplots(
     rows=1,
     cols=3,
-    subplot_titles=("Escala Linear (Dados Reais)", "Escala Log-Log", "Projeção com IC"),
+    subplot_titles=("Linear Scale (Real Data)", "Log-Log Scale", "Projection with CI"),
 )
 
 x_linear = np.linspace(1000, 100000, 50)
@@ -63,7 +63,7 @@ fig4.add_trace(
 )
 
 fig4.update_layout(
-    title="📈 Escalabilidade: Cobertura do Catálogo vs Usuários<br><sup>R² = 0.947 | Meta de 15% atingida com 500 mil usuários</sup>",
+    title="📈 Scalability: Catalog Coverage vs Users<br><sup>R² = 0.947 | 15% goal reached with 500k users</sup>",
     showlegend=False,
     font=dict(family="Marat Sans", size=14),
 )

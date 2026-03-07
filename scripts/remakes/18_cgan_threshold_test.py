@@ -34,17 +34,17 @@ def plot_threshold_distribution(thresholds):
         df,
         x="threshold",
         nbins=20,
-        title="Distribuição de Thresholds Dinâmicos (cGAN Meta-Observer)",
-        labels={"threshold": "Threshold Gerado"},
+        title="Dynamic Thresholds Distribution (cGAN Meta-Observer)",
+        labels={"threshold": "Generated Threshold"},
         marginal="violin",  # Adiciona um violino no topo para ver a densidade
     )
 
     # Adicionar linhas de referência dos modos estáticos
-    fig.add_vline(x=0.3, line_dash="dash", line_color="green", annotation_text="Aventureiro (0.3)")
+    fig.add_vline(x=0.3, line_dash="dash", line_color="green", annotation_text="Adventurous (0.3)")
     fig.add_vline(
-        x=0.5, line_dash="dash", line_color="orange", annotation_text="Equilibrado (0.5)"
+        x=0.5, line_dash="dash", line_color="orange", annotation_text="Balanced (0.5)"
     )
-    fig.add_vline(x=0.7, line_dash="dash", line_color="red", annotation_text="Conservador (0.7)")
+    fig.add_vline(x=0.7, line_dash="dash", line_color="red", annotation_text="Conservative (0.7)")
 
     fig.update_layout(
         template="plotly_dark", font_family="Marat Sans", xaxis_range=[0.1, 0.9], showlegend=False

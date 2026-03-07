@@ -23,8 +23,8 @@ try:
 except:
     df = pd.DataFrame()
 
-# 3. Correlation Matrix — PT-BR
-cols = ["Preço", "Recomendações", "Nota Metacritic", "Tempo Médio de Jogo", "Pico de Jogadores"]
+# 3. Correlation Matrix — EN
+cols = ["Price", "Recommendations", "Metacritic Score", "Avg Playtime", "Peak CCU"]
 corr_matrix = np.array(
     [
         [1.00, 0.15, 0.22, 0.08, 0.12],
@@ -63,7 +63,7 @@ for i in range(len(cols)):
             )
 
 fig3.update_layout(
-    title="📊 Matriz de Correlação — Dataset Steam<br><sup>Relações entre preço, popularidade e engajamento (bordas pretas = r > 0.7)</sup>",
+    title="📊 Correlation Matrix — Steam Dataset<br><sup>Relations between price, popularity, and engagement (black borders = r > 0.7)</sup>",
     xaxis=dict(tickangle=45),
     font=dict(family="Marat Sans", size=14),
     width=800,

@@ -10,8 +10,8 @@ PLOT_DIR = "../../reports/figures"
 os.makedirs(PLOT_DIR, exist_ok=True)
 
 # Mocked ablation study data
-modelos = ["Modelo Base", "+ Features do Jogador", "+ Features do Jogo", "Modelo Completo"]
-scores = [0.65, 0.74, 0.81, 0.88]  # Precisão Média (antigo Pseudo_MAP)
+modelos = ["Base Model", "+ Player Features", "+ Game Features", "Full Model"]
+scores = [0.65, 0.74, 0.81, 0.88]  # Mean Precision
 
 # Distinct colors
 colors = ["#ced4da", "#6c757d", "#495057", "#0d6efd"]
@@ -29,8 +29,8 @@ fig = go.Figure(
 )
 
 fig.update_layout(
-    title="🛠️ Estudo de Ablação: Impacto de Cada Conjunto de Dados<br><sup>Como as informações do jogo e do jogador melhoram a recomendação</sup>",
-    yaxis_title="Precisão Média",
+    title="🛠️ Ablation Study: Impact of Each Feature Set<br><sup>How game and player data improve recommendations</sup>",
+    yaxis_title="Mean Precision",
     font=dict(family="Marat Sans", size=14),
     yaxis=dict(range=[0, 1.0]),
 )

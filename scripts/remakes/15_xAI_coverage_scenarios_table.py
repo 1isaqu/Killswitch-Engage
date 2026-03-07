@@ -8,16 +8,16 @@ PLOT_DIR = "../../reports/figures"
 os.makedirs(PLOT_DIR, exist_ok=True)
 
 header = [
-    "<b>Base de Usuários</b>",
-    "<b>Cenário Otimista<br>(Melhor caso)</b>",
-    "<b>Cenário Realista<br>(Esperado)</b>",
-    "<b>Cenário Conservador<br>(Pior caso)</b>",
+    "<b>User Base</b>",
+    "<b>Optimistic Scenario<br>(Best case)</b>",
+    "<b>Realistic Scenario<br>(Expected)</b>",
+    "<b>Conservative Scenario<br>(Worst case)</b>",
 ]
 
-usuarios = ["10.000", "100.000", "500.000", "1.000.000"]
-otimista = ["12% de Cobertura", "15% de Cobertura", "20% de Cobertura", "25% de Cobertura"]
-realista = ["8% de Cobertura", "12% de Cobertura", "15% de Cobertura", "18% de Cobertura"]
-conservador = ["5% de Cobertura", "9% de Cobertura", "12% de Cobertura", "14% de Cobertura"]
+usuarios = ["10,000", "100,000", "500,000", "1,000,000"]
+otimista = ["12% Coverage", "15% Coverage", "20% Coverage", "25% Coverage"]
+realista = ["8% Coverage", "12% Coverage", "15% Coverage", "18% Coverage"]
+conservador = ["5% Coverage", "9% Coverage", "12% Coverage", "14% Coverage"]
 
 fig = go.Figure(
     data=[
@@ -40,7 +40,7 @@ fig = go.Figure(
 )
 
 fig.update_layout(
-    title="📈 Projeção de Cobertura do Catálogo vs Escala de Usuários",
+    title="📈 Catalog Coverage Projection vs User Scale",
     margin=dict(l=20, r=20, t=50, b=20),
     font=dict(family="Marat Sans"),
 )

@@ -23,7 +23,7 @@ try:
 except:
     df = pd.DataFrame()
 
-# 2. Random Forest — Matrizes de Confusão por Threshold (PT-BR)
+# 2. Random Forest — Confusion Matrices by Threshold (EN)
 z_03 = [[700, 300], [100, 900]]
 z_05 = [[850, 150], [200, 800]]
 z_07 = [[950, 50], [400, 600]]
@@ -32,14 +32,14 @@ fig2 = make_subplots(
     rows=1,
     cols=3,
     subplot_titles=(
-        "Threshold 0.3<br><sup>F1: 0.82 | Precisão: 0.75 | Recall: 0.90</sup>",
-        "Threshold 0.5<br><sup>F1: 0.82 | Precisão: 0.84 | Recall: 0.80</sup>",
-        "Threshold 0.7<br><sup>F1: 0.73 | Precisão: 0.92 | Recall: 0.60</sup>",
+        "Threshold 0.3<br><sup>F1: 0.82 | Precision: 0.75 | Recall: 0.90</sup>",
+        "Threshold 0.5<br><sup>F1: 0.82 | Precision: 0.84 | Recall: 0.80</sup>",
+        "Threshold 0.7<br><sup>F1: 0.73 | Precision: 0.92 | Recall: 0.60</sup>",
     ),
     horizontal_spacing=0.1,
 )
 
-labels = ["Negativo", "Positivo"]
+labels = ["Negative", "Positive"]
 
 for i, z in enumerate([z_03, z_05, z_07]):
     heatmap = go.Heatmap(
@@ -54,7 +54,7 @@ for i, z in enumerate([z_03, z_05, z_07]):
     fig2.add_trace(heatmap, row=1, col=i + 1)
 
 fig2.update_layout(
-    title="🔍 Random Forest — Matrizes de Confusão por Threshold<br><sup>Threshold 0.3 (exploratório) | 0.5 (padrão) | 0.7 (conservador)</sup>",
+    title="🔍 Random Forest — Confusion Matrices by Threshold<br><sup>Threshold 0.3 (exploratory) | 0.5 (default) | 0.7 (conservative)</sup>",
     font=dict(family="Marat Sans", size=14),
 )
 

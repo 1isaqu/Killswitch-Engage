@@ -39,9 +39,9 @@ fig.add_trace(
         x=epochs,
         y=disc_loss,
         mode="lines",
-        name="Perda do Discriminador",
+        name="Discriminator Loss",
         line=dict(color="#1f77b4", width=2),
-        hovertemplate="Época: %{x}<br>Perda: %{y:.3f}<extra></extra>",
+        hovertemplate="Epoch: %{x}<br>Loss: %{y:.3f}<extra></extra>",
     )
 )
 
@@ -50,19 +50,19 @@ fig.add_trace(
         x=epochs,
         y=gen_loss,
         mode="lines",
-        name="Perda do Gerador",
+        name="Generator Loss",
         line=dict(color="#ff7f0e", width=2),
-        hovertemplate="Época: %{x}<br>Perda: %{y:.3f}<extra></extra>",
+        hovertemplate="Epoch: %{x}<br>Loss: %{y:.3f}<extra></extra>",
     )
 )
 
 fig.update_layout(
-    title="📉 Como a IA Aprendeu a Recomendar Jogos<br><sup>Perda do Discriminador e do Gerador ao longo de 500 épocas de treinamento</sup>",
-    xaxis_title="Época de Treinamento",
-    yaxis_title="Perda (Loss)",
+    title="📉 How the AI Learned to Recommend Games<br><sup>Discriminator and Generator loss over 500 training epochs</sup>",
+    xaxis_title="Training Epoch",
+    yaxis_title="Loss",
     font=dict(family="Marat Sans", size=14),
     legend=dict(
-        title="<b>Componente da Rede</b>",
+        title="<b>Network Component</b>",
         orientation="v",
         yanchor="top",
         y=0.99,

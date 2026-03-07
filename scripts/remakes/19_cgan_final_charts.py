@@ -59,17 +59,17 @@ async def generate_final_production_chart():
 
     # Mapeamento Descritivo de Clusters (Persona do Usuário)
     cluster_labels = {
-        "Cluster 0": "Perfil: Explorador / Casual (Baixa freqüência)",
-        "Cluster 1": "Perfil: Regular (Gosta de Ação/Aventura)",
-        "Cluster 2": "Perfil: Veterano / HC (Alta retenção - RPG/Estratégia)",
-        "Cluster 3": "Perfil: Indie Lover (Nicho)",
-        "Cluster 4": "Perfil: Consumidor Balanceado",
-        "Cluster 5": "Perfil: Tático / RTS",
-        "Cluster 6": "Perfil: Social / Coop (Focus Multiplayer)",
-        "Cluster 7": "Perfil: Hardcore Shooters (FPS)",
-        "Cluster 8": "Perfil: Enthusiast (Early Access/VR)",
+        "Cluster 0": "Profile: Explorer / Casual (Low frequency)",
+        "Cluster 1": "Profile: Regular (Likes Action/Adventure)",
+        "Cluster 2": "Profile: Veteran / HC (High retention - RPG/Strategy)",
+        "Cluster 3": "Profile: Indie Lover (Niche)",
+        "Cluster 4": "Profile: Balanced Consumer",
+        "Cluster 5": "Profile: Tactical / RTS",
+        "Cluster 6": "Profile: Social / Coop (Multiplayer Focus)",
+        "Cluster 7": "Profile: Hardcore Shooters (FPS)",
+        "Cluster 8": "Profile: Enthusiast (Early Access/VR)",
     }
-    df_res["Persona do Usuário"] = df_res["Cluster"].map(cluster_labels).fillna(df_res["Cluster"])
+    df_res["User Persona"] = df_res["Cluster"].map(cluster_labels).fillna(df_res["Cluster"])
 
     # Cálculo da Métrica de Qualidade Principal
     mae_global = df_res["Erro cGAN"].mean()
@@ -79,11 +79,11 @@ async def generate_final_production_chart():
         df_res,
         x="Real",
         y="cGAN",
-        color="Persona do Usuário",
-        title=f"<b>🎯 Calibração Meta-Observer: Real vs Predito (MAE: {mae_global:.4f})</b><br><sup>Sincronia entre o Threshold Histórico (Ground-Truth) e a Decisão da AI (cGAN)</sup>",
+        color="User Persona",
+        title=f"<b>🎯 Meta-Observer Calibration: Real vs Predicted (MAE: {mae_global:.4f})</b><br><sup>Synchrony between Historical Threshold (Ground-Truth) and AI Decision (cGAN)</sup>",
         labels={
-            "Real": "Ground-Truth (Perfeição Histórica)",
-            "cGAN": "Predição AI (Decisão Meta-Learner)",
+            "Real": "Ground-Truth (Historical Perfection)",
+            "cGAN": "AI Prediction (Meta-Learner Decision)",
         },
         color_discrete_sequence=COLOR_PALETTE,
         trendline="ols",
@@ -92,11 +92,11 @@ async def generate_final_production_chart():
     # Anotação Explicativa Central (Mantida na base)
     fig.add_annotation(
         text=(
-            "<b>📊 O que os eixos mostram?</b><br>"
-            "<b>• Ground-Truth:</b> O threshold exato que daria a melhor recomendação para este usuário no passado.<br>"
-            "<b>• cGAN (Predito):</b> O valor que a AI calculou em tempo real usando 147 variáveis de comportamento.<br>"
-            "<b>• Métrica de Qualidade:</b> O <b>MAE (Erro Médio Absoluto)</b> de 0.0156 indica que a AI acerta o 'ponto doce'<br>"
-            "de recomendação com 98.5% de precisão de calibração."
+            "<b>📊 What do the axes show?</b><br>"
+            "<b>• Ground-Truth:</b> The exact threshold that would yield the best recommendation for this user in the past.<br>"
+            "<b>• cGAN (Predicted):</b> The value the AI computed in real-time using 147 behavioral variables.<br>"
+            "<b>• Quality Metric:</b> The <b>MAE (Mean Absolute Error)</b> of 0.0156 indicates the AI hits the 'sweet spot'<br>"
+            "of recommendation with 98.5% calibration accuracy."
         ),
         xref="paper",
         yref="paper",
@@ -118,7 +118,7 @@ async def generate_final_production_chart():
         x1=1,
         y1=1,
         line=dict(dash="dash", color="crimson", width=2),
-        name="Perfeição",
+        name="Perfection",
     )
 
     # 🟢 Zona de Alta Precisão (±0.05)
@@ -127,14 +127,14 @@ async def generate_final_production_chart():
         path="M 0.2,0.25 L 0.75,0.8 L 0.8,0.75 L 0.25,0.2 Z",
         fillcolor="rgba(0, 200, 0, 0.1)",
         line=dict(width=0),
-        name="Zona de Precisão (±0.05)",
+        name="Precision Zone (±0.05)",
     )
 
     fig.update_layout(
         font=dict(family=FONT_FAMILY, size=13, color="black"),
         title_font=dict(size=18, color="black"),
         legend=dict(
-            title="<b>Personas (Segmentação)</b>",
+            title="<b>Personas (Segmentation)</b>",
             orientation="h",  # Horizontal para caber melhor no topo
             yanchor="bottom",
             y=1.02,
@@ -146,13 +146,13 @@ async def generate_final_production_chart():
         ),
         margin=dict(l=60, r=60, t=120, b=150),  # Mais espaço no topo para título + legenda
         xaxis=dict(
-            title="Ground-Truth (Alvo Histórico)",
+            title="Ground-Truth (Historical Target)",
             showgrid=True,
             gridcolor="rgba(0,0,0,0.1)",
             range=[0.25, 0.75],
         ),
         yaxis=dict(
-            title="Predição cGAN (Decisão AI)",
+            title="cGAN Prediction (AI Decision)",
             showgrid=True,
             gridcolor="rgba(0,0,0,0.1)",
             range=[0.25, 0.75],
@@ -167,17 +167,17 @@ async def generate_final_production_chart():
     # Gráfico complementar: Comparação de Erro (Barra Estilizada)
     err_data = pd.DataFrame(
         {
-            "Estratégia": ["Estratégia Fixa (0.5)", "Ajuste Dinâmico (cGAN)"],
+            "Strategy": ["Fixed Strategy (0.5)", "Dynamic Adjustment (cGAN)"],
             "MAE": [df_res["Erro Fixo (0.5)"].mean(), df_res["Erro cGAN"].mean()],
         }
     )
 
     fig2 = px.bar(
         err_data,
-        x="Estratégia",
+        x="Strategy",
         y="MAE",
-        color="Estratégia",
-        title="<b>📉 Redução de Erro: Estático vs Dinâmico</b><br><sup>Otimização de calibração 13x superior com Meta-Learning</sup>",
+        color="Strategy",
+        title="<b>📉 Error Reduction: Static vs Dynamic</b><br><sup>Calibration optimization 13x better with Meta-Learning</sup>",
         color_discrete_sequence=[COLOR_PALETTE[1], COLOR_PALETTE[2]],
         text_auto=".4f",
     )
@@ -186,7 +186,7 @@ async def generate_final_production_chart():
         showlegend=False,
         font=dict(family=FONT_FAMILY, size=14, color="black"),
         title_font=dict(size=20),
-        yaxis=dict(title="Erro Absoluto Médio (MAE)", showgrid=True),
+        yaxis=dict(title="Mean Absolute Error (MAE)", showgrid=True),
         margin=dict(l=60, r=60, t=90, b=60),
     )
     output_path2 = Path("reports/figures/20_cgan_error_reduction.png")

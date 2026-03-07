@@ -25,13 +25,13 @@ except:
 
 # 12. ANOVA One-Way Visualization (User Score vs Categories)
 categories = [
-    "Simulação",
-    "Estratégia",
+    "Simulation",
+    "Strategy",
     "RPG",
-    "Ação",
-    "Aventura",
-    "Esportes",
-    "Corrida",
+    "Action",
+    "Adventure",
+    "Sports",
+    "Racing",
     "MMO",
     "Indie",
     "Casual",
@@ -79,8 +79,8 @@ fig12.update_traces(textposition="outside")
 fig12.update_layout(
     showlegend=False,
     font=dict(family="Marat Sans", size=14),
-    xaxis_title="Nota Média dos Usuários (0-100)",
-    yaxis_title="Categoria de Jogo",
+    xaxis_title="Mean User Score (0-100)",
+    yaxis_title="Game Category",
     coloraxis_showscale=False,
 )
 
@@ -90,7 +90,7 @@ fig12.add_vline(
     x=overall_mean,
     line_dash="dash",
     line_color="gray",
-    annotation_text=f"Média Geral ({overall_mean:.1f})",
+    annotation_text=f"Overall Mean ({overall_mean:.1f})",
 )
 
 fig12.write_image(PLOT_DIR + "/anova_user_score_by_category.png", width=1200, height=600, scale=2)

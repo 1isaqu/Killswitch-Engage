@@ -23,7 +23,7 @@ try:
 except:
     df = pd.DataFrame()
 
-# 7. Curva Precisão-Recall
+# 7. Precision-Recall Curve
 recall = np.linspace(0, 1, 100)
 precision = 1 - 0.2 * recall**2 - 0.1 * recall**5
 
@@ -36,7 +36,7 @@ fig7.add_trace(
         fillcolor="rgba(0,100,250,0.2)",
         mode="lines",
         line=dict(color="blue", width=3),
-        name="Curva PR",
+        name="PR Curve",
     )
 )
 
@@ -55,12 +55,12 @@ fig7.add_trace(
     )
 )
 
-fig7.add_hline(y=0.5, line_dash="dot", line_color="gray", annotation_text="Linha de Base")
+fig7.add_hline(y=0.5, line_dash="dot", line_color="gray", annotation_text="Baseline")
 
 fig7.update_layout(
-    title="🎯 Curva Precisão-Recall — Random Forest<br><sup>PR-AUC = 0.915 | Thresholds: 0.3, 0.5, 0.7</sup>",
+    title="🎯 Precision-Recall Curve — Random Forest<br><sup>PR-AUC = 0.915 | Thresholds: 0.3, 0.5, 0.7</sup>",
     xaxis_title="Recall",
-    yaxis_title="Precisão",
+    yaxis_title="Precision",
     font=dict(family="Marat Sans", size=14),
 )
 
