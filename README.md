@@ -349,7 +349,7 @@ Leia o arquivo `CONTRIBUTING.md` para mais detalhes sobre o processo de contribu
 
 **Autor:** Isaque  
 **Contato:** [![GitHub](https://img.shields.io/badge/GitHub-seu--usuario-181717?logo=github)](https://github.com/seu-usuario) [![LinkedIn](https://img.shields.io/badge/LinkedIn-Isaque-0A66C2?logo=linkedin)](https://linkedin.com/in/seu-usuario)
-**Artigo:** [![Medium](https://medium.com/@isaquecarvalho2007/como-constru%C3%AD-um-sistema-de-recomenda%C3%A7%C3%A3o-que-entende-jogadores-de-verdade-c0c32aafa470)
+**Artigo:** [![Medium](https://img.shields.io/badge/Medium-12100E?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/@isaquecarvalho2007/como-constru%C3%AD-um-sistema-de-recomenda%C3%A7%C3%A3o-que-entende-jogadores-de-verdade-c0c32aafa470?postPublishedType=repub)
 <div align="center">
 
 **⭐ Se este projeto foi útil, considere deixar uma estrela!**
