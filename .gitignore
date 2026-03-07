@@ -86,8 +86,10 @@ logs/
 !logs/.gitkeep
 
 # ── Notebooks (outputs limpos são OK; checkpoints não) ───────────
+notebooks/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
+remake_graficos.ipynb
 
 # ── Docker ───────────────────────────────────────────────────────
 # (docker-compose.yml é versionado; override local não)
@@ -110,3 +112,11 @@ docker-compose.override.yml
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# ── Documentação interna ──────────────────────────────────────────
+.txt/
+
+# ── Pastas redundantes / extras ──────────────────────────────────
+.github/
+reports/figures remake/
+reports/graficos_apresentaveis/
