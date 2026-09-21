@@ -114,10 +114,46 @@ de 05/03/2026 e mostra o efeito:
 
 A tabela publicada anteriormente era o segundo run.
 
-**Métricas de ranking honestas ainda não foram medidas.** Para medi-las é preciso:
-separar as sessões por tempo, manter as últimas fora do treino, e avaliar a saída
-real do `RecomendadorService` contra elas. Até lá, o projeto não faz alegação de
-Precision/Recall/NDCG.
+### Medição honesta (`scripts/experimentation/evaluate_ranker.py`)
+
+Split temporal real (últimas 20% das sessões de cada usuário fora do treino),
+SVD treinado só no train, avaliado contra baselines. **Os dados originais foram
+perdidos, então o script regenera o dataset com o mesmo processo generativo de
+`populate_supabase_v2.py`** — os números medem o algoritmo sobre dados com a mesma
+estrutura, não o dataset original. Reproduza com `--csv-dir data/ml_ready`.
+
+| Modelo | P@10 | R@10 | NDCG@10 | Cobertura |
+|---|---|---|---|---|
+| **SVD (camada 3)** | **0.0149** | 0.0119 | 0.0185 | 1.52% |
+| SVD sem itens já vistos | **0.0000** | 0.0000 | 0.0000 | 1.56% |
+| Baseline: popularidade | 0.0004 | 0.0008 | 0.0007 | 0.01% |
+| Baseline: aleatório | 0.0001 | 0.0001 | 0.0000 | 15.09% |
+
+O SVD bate popularidade por ~37× e aleatório por ~149×. Mas a segunda linha é a
+que importa: **removendo os jogos que o usuário já jogou, a precisão vai a zero
+exato.** Todo o acerto vem de re-recomendar o que a pessoa já tinha jogado — o
+modelo não generaliza nada.
+
+### Por que — o problema está nos dados, não no modelo
+
+O diagnóstico do mesmo script explica:
+
+| Medida | Valor |
+|---|---|
+| Jogos em comum entre dois usuários aleatórios | **0.001** (99.9% dos pares não compartilham nada) |
+| Itens do holdout que o próprio usuário já jogou | 66.7% |
+| Concentração de popularidade no top-1% dos jogos | 4.7% (Steam real: 60–80%) |
+
+A causa está em `populate_supabase_v2.py:119`: os jogos favoritos de cada usuário
+são sorteados **uniformemente do catálogo inteiro, de forma independente por
+usuário**. Sem gostos compartilhados não existe sinal colaborativo para descobrir
+— e filtragem colaborativa é, por definição, encontrar usuários parecidos. A
+popularidade também fica achatada, então nem a baseline tem o que explorar.
+
+**Nenhum ajuste de modelo resolve isso.** A correção é no gerador: os favoritos
+precisam vir de grupos latentes compartilhados (afinidade por gênero, por exemplo),
+para que usuários se sobreponham. Enquanto isso não mudar, a camada 3 é
+intestável — o que também explica por que os alvos da cGAN colapsaram.
 
 > A telemetria "online" (CTR, tempo de sessão, taxa de aceitação) também foi removida:
 > é amostrada de distribuições escolhidas a mão em `online_metrics.py`. Nenhum usuário

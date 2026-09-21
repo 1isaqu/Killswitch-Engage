@@ -147,12 +147,31 @@ class RecomendadorService:
             user_idx = user_map[user_id_str]
             user_vec: np.ndarray = self._ranker["user_embeddings"][user_idx]
             explicacao = "Baseado no seu perfil de jogo"
+            scores: np.ndarray = item_embeddings @ user_vec
         else:
-            # Cold start: global mean embedding
-            user_vec = np.mean(self._ranker["user_embeddings"], axis=0)
+            # Cold start: with no history there is no user embedding to look up.
+            # Use popularity observed during training (distinct users per game).
+            # The global mean embedding used previously does not measure
+            # popularity — it is just the centroid of the latent space.
+            popularity = self._ranker.get("item_popularity")
+            if popularity is not None:
+                scores = np.asarray(popularity, dtype=float)
+            else:
+                # Legacy bundles carry no popularity: keep the previous behaviour.
+                scores = item_embeddings @ np.mean(self._ranker["user_embeddings"], axis=0)
             explicacao = "Jogo popular recomendado para novos usuários"
 
-        scores: np.ndarray = item_embeddings @ user_vec
+        # Normalise scores to [0, 1] per user before thresholding.
+        # Mode thresholds (0.3/0.5/0.7) live in [0, 1], but the raw SVD dot
+        # product is unbounded, so comparing them directly mixes scales: the
+        # filter barely bites and all three modes return nearly the same set.
+        # This mirrors build_cgan_dataset.compute_best_thresholds, aligning
+        # production with the scale the cGAN targets were measured on.
+        s_min, s_max = float(scores.min()), float(scores.max())
+        if s_max > s_min:
+            scores = (scores - s_min) / (s_max - s_min)
+        else:
+            scores = np.zeros_like(scores)
 
         # Filter by threshold
         valid_mask = scores >= threshold
