@@ -347,8 +347,54 @@ uniformemente é trivialmente fácil. O modelo aprendeu "jogo que eu joguei" con
 
 É a fraqueza conhecida do BPR com amostragem uniforme, e é exatamente o que **WARP**
 corrige: reamostra até encontrar um negativo que viola o ranking, treinando em
-negativos difíceis. A recomendação de usar LightFM/WARP continua de pé — agora com
-evidência de *por quê*, não por analogia.
+negativos difíceis.
+
+#### Terceira tentativa: WARP (também não funcionou)
+
+`scripts/experimentation/warp.py` implementa WARP (Weston et al., 2011): reamostra
+negativos até violar a margem, estima o rank pelo número de tentativas e pondera a
+atualização por `Phi(rank)`. É a perda que o LightFM implementa.
+
+O treino é saudável — violações caem de 55,8% para 37,7% e as tentativas até achar
+um violador sobem de 10,8 para 16,0 ao longo das épocas, que é o sinal de que a
+ordenação está melhorando:
+
+| Modelo | P@10 completo | P@10 descoberta | IC 95% |
+|---|---|---|---|
+| *Baseline: popularidade* | — | **0.0091** | [0.0079, 0.0103] |
+| SVD k=16 | 0.0879 | 0.0075 | [0.0063, 0.0088] |
+| WARP k=50 | 0.0524 | 0.0030 | [0.0022, 0.0038] |
+| WARP k=16 | 0.0242 | 0.0018 | [0.0012, 0.0024] |
+
+WARP perde para o SVD (−0.0045) e para a popularidade (−0.0061), as duas
+significativas no bootstrap pareado. **A hipótese estava errada.** Trocar a perda de
+reconstrução por perda de ranqueamento não resolve a descoberta aqui.
+
+> Nota de implementação: a primeira versão divergiu — `Phi(rank)` chega a ~12 com
+> 122k itens e, sem limitar a norma dos embeddings, o produto escalar estourava e
+> as violações viravam `NaN` (detectável pela taxa despencando para ~1%). Corrigido
+> com projeção na bola de raio `max_norm` após cada atualização, e margem calibrada
+> para a faixa de score resultante. Os números acima são do treino saudável.
+
+#### O que quatro tentativas dizem
+
+| Tentativa | P@10 descoberta |
+|---|---|
+| *Baseline: popularidade* | **0.0091** |
+| SVD k=16 | 0.0075 |
+| Despopularização (melhor alpha = 0) | 0.0075 |
+| BPR k=50 | 0.0060 |
+| WARP k=50 | 0.0030 |
+
+Nenhuma bate a popularidade. O padrão é consistente o bastante para tirar uma
+conclusão: **nesta base, sinal colaborativo não generaliza para itens não vistos,
+independentemente da função de perda.** Com 0,02% de densidade e 41% dos jogos
+aparecendo uma única vez, não há coocorrência suficiente para inferir afinidade.
+
+O único caminho não testado é **conteúdo** — usar as features do jogo diretamente.
+E, como registrado acima, testá-lo neste dataset seria circular: o gerador sorteia
+favoritos ∝ afinidade_de_gênero × popularidade, então mediria a premissa que
+escrevemos, não o método. Essa pergunta só se responde com interação real.
 
 #### Onde isso deixa o projeto
 

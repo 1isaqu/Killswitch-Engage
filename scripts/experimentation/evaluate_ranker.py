@@ -37,6 +37,7 @@ from scipy.sparse import csr_matrix
 from sklearn.decomposition import TruncatedSVD
 
 from bpr import BPRRanker
+from warp import WARPRanker
 
 SEED = 42
 N_USERS = 10_000
@@ -486,8 +487,8 @@ def main() -> None:
     varrer_despopularizacao(Uk, Vk, popularidade, users, verdade_val, n_games, vistos)
 
     # ── BPR: perda de ranqueamento em vez de reconstrução ───────────────────
-    print("\n\nBPR-MF (perda de ranqueamento par-a-par)")
-    print("Hipótese: SVD otimiza reconstrução, não ranking. BPR otimiza ranking.\n")
+    print("\n\nPERDAS DE RANQUEAMENTO (BPR e WARP)")
+    print("Hipótese: SVD otimiza reconstrução, não ranking. Estas otimizam ranking.\n")
 
     bpr_users = treino.usuario_id.values.astype(np.int64)
     bpr_items = treino.jogo_id.values.astype(np.int64)
@@ -509,6 +510,24 @@ def main() -> None:
         print(
             f"  só itens novos     P@10 {descoberta.precision:.4f}  "
             f"NDCG {descoberta.ndcg:.4f}  cobertura {descoberta.cobertura:.2%}\n"
+        )
+
+    # WARP: em vez de um negativo uniforme, reamostra até achar um que viole a
+    # margem, e pondera pelo rank estimado. Corrige justamente o ponto fraco do
+    # BPR aqui — com densidade 0,02% o negativo uniforme é trivial.
+    for k in (K_ESCOLHIDO, N_COMPONENTS):
+        print(f"Treinando WARP (n_factors={k}) ...")
+        w = WARPRanker(n_factors=k, n_epochs=30, margem=0.1, max_norm=1.0, seed=SEED)
+        w.fit(bpr_users, bpr_items, n_users, n_games, verbose=False)
+        completo = avaliar(f"WARP k={k}", w.scores, users, verdade_val, n_games)
+        descoberta = avaliar(
+            f"WARP k={k} (desc)", w.scores, users, verdade_val, n_games, vistos=vistos
+        )
+        lo, hi = ic_bootstrap(descoberta.por_usuario)
+        print(f"  tarefa completa    P@10 {completo.precision:.4f}  NDCG {completo.ndcg:.4f}")
+        print(
+            f"  só itens novos     P@10 {descoberta.precision:.4f}  "
+            f"IC 95% [{lo:.4f}, {hi:.4f}]\n"
         )
 
     diagnosticar_sinal(treino, verdade, np.random.default_rng(0))
