@@ -1,3 +1,25 @@
+"""ATENCAO — AS METRICAS OFFLINE PRODUZIDAS AQUI ESTAO CONTAMINADAS.
+
+Dois defeitos tornam os numeros deste script nao-publicaveis:
+
+1. VAZAMENTO DE GROUND TRUTH. Em `run()`, o gabarito e construido a partir das
+   proprias recomendacoes (`subset_hits = recommended_ids[:7]`), o que forca
+   Precision@10 = 0.7 por construcao. A metrica mede a propria saida, nao acerto.
+
+2. AS RECOMENDACOES NAO VEM DO MODELO. `DummyManager.get_recommendation_for_user`
+   devolve `np.random.randint(...)`; os .pkl sao carregados mas nunca usados para
+   inferir.
+
+Efeito medido: o banco mlflow_experiments.db guarda as duas execucoes de
+05/03/2026. Sem o vazamento (run 63dc073a, 21:27) Precision@10 = 0.0006; com o
+vazamento (run d17da97c, 22:12) Precision@10 = 0.6999. A segunda foi a que
+alimentou a tabela do README.
+
+Antes de reportar qualquer numero daqui: o gabarito precisa vir de interacoes
+mantidas fora do treino (split temporal das sessoes) e a inferencia precisa
+chamar o RecomendadorService real.
+"""
+
 import os
 import json
 import pandas as pd
@@ -43,13 +65,21 @@ sys.modules['backend.app.models.schemas'] = MockSchemas()
 def load_pure_models():
     """ Load direto dos pkls pra mockar C++ sem fastapi envs """
     # Evitamos models_v2 e lemos os pkls reais de /scripts/modelos via var absoluta limpa
-    model_dir = "C:\\Users\\isaqu\\.gemini\\antigravity\\scratch\\steam_analysis\\scripts\\modelos"
-    
-    with open(f"{model_dir}\\classificador_rf.pkl", 'rb') as f:
+    # Caminho relativo a raiz do repo (antes: caminho absoluto da maquina do autor,
+    # que impedia qualquer outra pessoa de executar este script).
+    model_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "scripts", "modelos",
+    )
+
+    with open(os.path.join(model_dir, "classificador_rf.pkl"), 'rb') as f:
         rf = joblib.load(f)
     print("Layer 1 classificado...")
-    
-    with open(f"{model_dir}\\lightfm_model.pkl", 'rb') as f:
+
+    ranker_path = os.path.join(model_dir, "svd_ranker.pkl")
+    if not os.path.exists(ranker_path):
+        ranker_path = os.path.join(model_dir, "lightfm_model.pkl")  # nome legado
+    with open(ranker_path, 'rb') as f:
         svd = joblib.load(f)
     print("Layer 3 SVD classificado...")
         
@@ -178,9 +208,11 @@ def run():
             recs_dict[u] = recommended_ids
             pred_scores_p_user[u] = scores
             
-            # Verdades realistas simuladas localmente p/ P@10 = ~0.72 bater com Phase 4
+            # VAZAMENTO (ver docstring do modulo): o gabarito abaixo e derivado das
+            # proprias recomendacoes, o que fixa Precision@10 em ~0.7 por construcao.
+            # Nao reportar as metricas resultantes como desempenho do modelo.
             np.random.seed(u)
-            subset_hits = recommended_ids[:7] # Garantindo q 7 entre 10 costuma bater pra chegar na métrica
+            subset_hits = recommended_ids[:7]
             truths_dict[u] = subset_hits + np.random.randint(0, catalog_ids, size=3).tolist()
             
         except Exception:

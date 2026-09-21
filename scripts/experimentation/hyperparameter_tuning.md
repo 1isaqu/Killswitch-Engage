@@ -1,5 +1,9 @@
 # Otimização de Hiperparâmetros (Bayesian Optuna)
 
+> ⚠️ **NUMEROS NAO VALIDOS.** A busca rodou sobre ruido: `optimization.py` gera
+> features com `np.random.rand(2000, 10)` e alvo com `np.random.randint`. Os
+> parametros abaixo nao descrevem os modelos do projeto.
+
 > **Decisão Arquitetural**: Optamos por 20 trials devido a restrições computacionais. Isso captura ~90% do ótimo teórico com 20% do esforço computacional.
 
 Melhores Parâmetros Encontrados:

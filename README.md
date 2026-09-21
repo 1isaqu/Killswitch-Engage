@@ -4,7 +4,6 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
-[![LightFM](https://img.shields.io/badge/LightFM-1.17-3776AB)](https://making.lyst.com/lightfm/docs/home.html)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?logo=redis&logoColor=white)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/Docker-24.0-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
@@ -37,14 +36,14 @@ Uma arquitetura de **4 camadas em cascata**:
           │
           ▼
  ┌─────────────────┐
- │  Camada 2:      │  → Clustering (KMeans / HDBSCAN) identifica o arquétipo
+ │  Camada 2:      │  → Clustering (KMeans, k escolhido por silhouette)
  │  Clustering     │     de usuário (casual, médio, hardcore)
  └────────┬────────┘
           │
           ▼
  ┌─────────────────┐
- │  Camada 3:      │  → LightFM (Ranking Hybrid) ranqueia os candidatos por
- │  LightFM Ranker │     colaboratividade + features de conteúdo
+ │  Camada 3:      │  → TruncatedSVD (filtragem colaborativa) ranqueia os
+ │  SVD Ranker     │     candidatos a partir da matriz usuário × jogo
  └────────┬────────┘
           │
           ▼
@@ -57,37 +56,72 @@ Uma arquitetura de **4 camadas em cascata**:
   [API FastAPI + Cache Redis]
 ```
 
+> ### ⚠️ Estado real da implementação (leia antes das métricas)
+>
+> O diagrama acima descreve o **desenho pretendido**. O que hoje roda em inferência
+> (`backend/app/services/recomendador.py`) é **apenas a camada 3**: produto escalar
+> entre o embedding do usuário e os embeddings de item, filtrado por um threshold fixo.
+>
+> | Camada | Treinada? | Usada em inferência? |
+> |---|---|---|
+> | 1 — RandomForest | ✅ sim | ❌ não — `passa_filtro_qualidade()` retorna `True` incondicionalmente |
+> | 2 — KMeans | ✅ sim | ❌ não — carregada, nunca consultada |
+> | 3 — TruncatedSVD | ✅ sim | ✅ **sim — é o que gera a recomendação** |
+> | 4 — cGAN | ✅ sim | ❌ não — os thresholds vêm de um dicionário fixo, não da rede |
+>
+> Ou seja: as quatro camadas existem como artefatos treinados, mas **a cascata não está
+> conectada**. Integrá-las é o próximo passo do projeto, não um recurso entregue.
+
 ---
 
 ## ✨ 2. Funcionalidades
 
 - ✅ **Recomendações personalizadas** baseadas em perfil completo de usuário
 - ✅ **3 modos de recomendação**: Conservador (precisão), Equilibrado (padrão), Aventureiro (exploração)
-- ✅ **Cold start** para novos usuários — fallback por popularidade + cluster de arquétipo
+- ✅ **Cold start** para novos usuários — fallback pela média global dos embeddings de usuário
 - ✅ **API rápida** com latência < 15ms e cache Redis nas rotas analíticas (TTL 1h)
 - ✅ **Pipeline completo de dados** com imputação inteligente validada (KS-test p = 1.0)
-- ✅ **MLOps integrado**: experimentos versionados com MLflow + otimização Bayesiana (Optuna, 20 trials)
-- ✅ **Análise de cobertura com Lei de Potência** (R² = 0.9474): escalabilidade comprovada matematicamente
+- ⚠️ **MLOps**: MLflow instrumentado e funcionando; a busca com Optuna existe mas rodou sobre
+  dados aleatórios (`optimization.py`), então não produziu hiperparâmetros aproveitáveis
+- ✅ **Análise de cobertura com Lei de Potência** (R² = 0.9474) — medida de fato pelo
+  `scripts/analysis/coverage_regression.py`, que executa o recomendador real
 - ✅ **Segurança**: credenciais por variáveis de ambiente, SSL verificado, sem secrets hard-coded
 
 ---
 
 ## 📊 3. Métricas e Resultados
 
-### 3.1 Performance dos Modelos
+### 3.1 Performance dos Modelos — retirada
 
-Avaliação offline consolidada do pipeline híbrido sobre usuários sintéticos:
+**Esta seção continha uma tabela de Precision/Recall/NDCG/MAP/MRR que não é válida.
+Ela foi removida em vez de corrigida, porque os números não medem o modelo.**
 
-| Métrica | @5 | @10 | @20 | Benchmark (popularidade) | Ganho @10 |
-|---------|-----|------|------|--------------------------|-----------|
-| **Precision** | 1.000 | 0.700 | 0.350 | 0.58 | **+20.7%** |
-| **Recall** | 0.500 | 0.410 | 0.700 | 0.32 | **+28.1%** |
-| **NDCG** | 1.000 | 0.801 | 0.801 | 0.65 | **+23.2%** |
-| **MAP** | — | 0.700 | — | — | — |
-| **MRR** | — | 1.000 | — | — | — |
-| **Coverage** | — | 11.5% | — | — | — |
+O script que os gerou (`scripts/experimentation/run_experiments.py`) tem dois defeitos:
 
-> **Telemetria simulada (TDD online):** CTR = 30.4% · Tempo de sessão médio = 210 min · Taxa de aceitação = 52.7%
+1. **Gabarito vazado** — o ground truth era construído a partir das próprias
+   recomendações (`subset_hits = recommended_ids[:7]`), o que fixa Precision@10
+   em ~0.7 por construção.
+2. **Recomendações não vinham do modelo** — eram `np.random.randint`; os `.pkl`
+   eram carregados mas nunca usados para inferir.
+
+O banco `scripts/experimentation/mlflow_experiments.db` preserva as duas execuções
+de 05/03/2026 e mostra o efeito:
+
+| Run MLflow | Horário | Precision@10 | MRR |
+|---|---|---|---|
+| `63dc073a` (sem o vazamento) | 21:27 | **0.0006** | 0.0014 |
+| `d17da97c` (com o vazamento) | 22:12 | **0.6999** | 1.000 |
+
+A tabela publicada anteriormente era o segundo run.
+
+**Métricas de ranking honestas ainda não foram medidas.** Para medi-las é preciso:
+separar as sessões por tempo, manter as últimas fora do treino, e avaliar a saída
+real do `RecomendadorService` contra elas. Até lá, o projeto não faz alegação de
+Precision/Recall/NDCG.
+
+> A telemetria "online" (CTR, tempo de sessão, taxa de aceitação) também foi removida:
+> é amostrada de distribuições escolhidas a mão em `online_metrics.py`. Nenhum usuário
+> real interagiu com o sistema.
 
 ### 3.2 Os 3 Modos de Recomendação
 
@@ -107,7 +141,7 @@ O sistema expõe três arquétipos de recomendação que permitem ao usuário co
 
 A cobertura segue uma **Lei de Potência** com R² = 0.9474, comprovando que o baixo percentual atual é uma característica do volume de dados sintéticos — e não um defeito do modelo.
 
-**Dados empíricos (10.000 usuários reais do ranker, seed=42):**
+**Dados empíricos (10.000 usuários sintéticos do ranker, seed=42):**
 
 | Usuários | Jogos Únicos | Cobertura |
 |----------|-------------|-----------|
@@ -144,33 +178,47 @@ A cobertura segue uma **Lei de Potência** com R² = 0.9474, comprovando que o b
 
 ---
 
-## 💼 4. Impacto de Negócio
+### 3.4 Camada 4 — cGAN (meta-learner de threshold)
 
-### 4.1 ROI e Retorno Financeiro
+**O que é real:** há uma GAN condicional de verdade em `scripts/meta_learning/`.
+Generator e Discriminator condicionados num vetor de 147 features de comportamento,
+loss adversarial `BCEWithLogitsLoss`, TTUR (lr_D 4e-4 > lr_G 1e-4), `n_critic`,
+gradient clipping e um termo L1 auxiliar. O treino aconteceu de fato: os
+checkpoints em `models/` carregam `num_batches_tracked = 40.500`, consistente com
+as 500 épocas da curva de loss (`reports/figures/training_curves.png`).
 
-| Cenário | ROI (12 meses) | Payback |
-|---------|----------------|---------|
-| 🔵 Conservador | 320% | 4 meses |
-| 🟡 Realista | 460% | 3 meses |
-| 🟢 Otimista | 580% | 2 meses |
+**O que não funcionou:** o gerador sofreu **mode collapse**. Como mostra
+`reports/figures/18_cgan_threshold_dist.png`, praticamente toda saída colapsa em
+~0.30, independentemente do usuário condicionado — em `19_cgan_final_reality_check.png`
+a linha do perfil "Veterano/HC" é horizontal. A loss do discriminador fica presa em
+~0.65 (≈ ln 2, ou seja, no acaso) durante as 500 épocas: o componente adversarial
+não contribuiu, e o que restou foi um regressor L1 que aprendeu a moda do alvo.
 
-### 4.2 Métricas de Negócio Projetadas
+**Sobre o "MAE 0.0156 vs 0.2011":** os alvos (`best_threshold`) também se concentram
+em 0.3, então um modelo que sempre responde 0.30 erra ~0.018. A "baseline estática"
+é a constante **0.5**, cujo erro é |0.5 − 0.3| = 0.20 — daí o 0.2011. Uma baseline
+trivial do tipo "responda a mediana do alvo" empataria com a cGAN. **O ganho de ~13×
+é artefato da constante escolhida, não evidência de aprendizado.** (As duas figuras
+ainda divergem entre si: `19_...png` traz 0.0182 no título e 0.0156 na legenda.)
 
-| Indicador | Impacto Projetado |
-|-----------|--------------------|
-| MAU (engajamento mensal) | **+27%** |
-| Churn rate | **−18%** |
-| Receita incremental | **+23%** |
-| CAC (custo de aquisição) | **−15%** |
-| LTV (lifetime value) | **+31%** |
+Além disso, a cGAN treinada **não é carregada em lugar nenhum** — não há
+`load_state_dict` no repositório. Os thresholds usados em produção vêm do dicionário
+fixo em `recomendador.py`.
 
-### 4.3 Proxy Metrics (Simulação Online TDD)
+---
 
-| Métrica | Valor Medido |
-|---------|-------------|
-| Taxa de aceitação simulada | **52.7%** |
-| Tempo médio de sessão projetado | **210 min** |
-| CTR simulado | **30.4%** |
+## 💼 4. Impacto de Negócio — não medido
+
+Esta seção apresentava ROI (320–580%), payback, MAU +27%, churn −18%, LTV +31% e
+proxy metrics de CTR / tempo de sessão.
+
+**Nenhum desses números foi derivado de dado algum** — não há usuário real, não há
+teste A/B, não há receita. Eram premissas escritas à mão com aparência de medição,
+e por isso foram removidas em vez de reetiquetadas.
+
+O que o projeto pode honestamente dizer sobre impacto: **nada ainda**. Um sistema de
+recomendação só produz números de negócio depois de ir a produção com usuários reais
+e um experimento controlado. Este ainda roda sobre 10.000 usuários sintéticos.
 
 ---
 
@@ -180,10 +228,9 @@ A cobertura segue uma **Lei de Potência** com R² = 0.9474, comprovando que o b
 
 | Tecnologia | Uso no Projeto |
 |------------|---------------|
-| **LightFM** | Ranking híbrido colaborativo + conteúdo |
-| **Scikit-learn** | RandomForest (camada 1) + KMeans (camada 2) |
+| **TruncatedSVD** (scikit-learn) | Ranking colaborativo — camada 3 |
+| **Scikit-learn** | RandomForest (camada 1), KMeans (camada 2), TruncatedSVD (camada 3) |
 | **PyTorch** | cGAN meta-learner (camada 4) |
-| **HDBSCAN** | Clustering alternativo de usuários |
 | **Optuna** | Otimização Bayesiana (20 trials por modelo) |
 | **MLflow** | Versionamento de experimentos e artefatos |
 | **SciPy** | Testes estatísticos (KS-test, regressão log-log) |
@@ -204,7 +251,6 @@ A cobertura segue uma **Lei de Potência** com R² = 0.9474, comprovando que o b
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0-EE4C2C?logo=pytorch&logoColor=white)
 ![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3-F7931E?logo=scikit-learn&logoColor=white)
-![LightFM](https://img.shields.io/badge/LightFM-1.17-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-24.0-2496ED?logo=docker&logoColor=white)
@@ -235,7 +281,8 @@ source venv/bin/activate   # Linux/Mac
 venv\Scripts\activate      # Windows
 
 # 3. Instale dependências
-pip install -r requirements.txt
+pip install -e .            # usa pyproject.toml
+# ou, só para a API:  pip install -r backend/requirements.txt
 
 # 4. Configure variáveis de ambiente
 cp .env.example .env
@@ -244,11 +291,12 @@ cp .env.example .env
 # 5. Suba os serviços com Docker
 docker-compose up -d
 
-# 6. Popule o banco (opcional)
-python scripts/populate_database.py
+# 6. Popule o banco (opcional — gera 10.000 usuários SINTÉTICOS e suas sessões)
+python -m src.data_preparation.populate_supabase
+python -m src.data_preparation.populate_supabase_v2
 
 # 7. Execute a API
-uvicorn backend.app.api:app --reload
+uvicorn backend.app.main:app --reload
 
 # 8. Acesse
 #   API:      http://localhost:8000
@@ -278,14 +326,15 @@ curl "http://localhost:8000/health"
 killswitch-engage/
 ├── backend/                    # API FastAPI (rotas, config, middlewares)
 │   └── app/
-│       ├── api.py              # Entry point da aplicação
+│       ├── main.py             # Entry point da aplicação
 │       ├── config.py           # Configurações (SSL, DB, Redis)
 │       └── routes/             # Endpoints (recomendações, analíticos)
 ├── src/                        # Código fonte dos modelos e serviços
-│   ├── models/                 # Definições dos modelos ML
-│   ├── services/               # RecomendadorService (orquestração das camadas)
+│   ├── models/                 # Treinadores ML — AUSENTE deste repo (ver nota abaixo)
+│   ├── backend/                # RecomendadorService (orquestração das camadas)
+│   ├── data_preparation/       # Ingestão, imputação, geração de usuários sintéticos
 │   ├── validation/             # Scripts de validação e sanidade
-│   └── experimentation/        # Integração MLflow + Optuna
+│   └── eda/                    # Análise exploratória
 ├── scripts/                    # Scripts utilitários e pipelines
 │   ├── analysis/               # coverage_regression.py, ablation, etc.
 │   ├── training/               # Treino de cada camada (layer1, layer2, layer3)
@@ -295,13 +344,20 @@ killswitch-engage/
 ├── reports/
 │   ├── figures/                # Gráficos gerados (PNG)
 │   └── insights/               # Relatórios técnicos (Markdown, CSV)
-├── .txt/                       # Documentação interna do projeto
+├── docs/                       # Documentação interna e revisão técnica
 ├── .env.example                # Template de variáveis de ambiente
 ├── docker-compose.yml          # Orquestração dos serviços
-├── indices.sql                 # Índices SQL recomendados
-├── requirements.txt            # Dependências Python
+├── scripts/sql/indices.sql     # Índices SQL recomendados
+├── pyproject.toml              # Dependências e configuração de ferramentas
 └── README.md                   # Este arquivo
 ```
+
+> ⚠️ **`src/models/` não está neste repositório.** A regra `models/` do `.gitignore`
+> (pensada para artefatos `.pkl`) casava também com `src/models/` e impediu que o
+> código dos treinadores fosse versionado. A regra foi corrigida para `/models/`,
+> mas os arquivos precisam ser adicionados de volta pelo autor. Enquanto isso,
+> `tests/test_models/test_rf_trainer.py` não coleta — ele importa
+> `src.models.classifier.rf_trainer`, que não existe aqui.
 
 ---
 
@@ -309,14 +365,15 @@ killswitch-engage/
 
 O projeto adota uma abordagem rigorosa de experimentação:
 
-| Aspecto | Detalhe |
-|---------|---------|
-| **Versionamento** | Todos os experimentos rastreados no MLflow com hiperparâmetros e métricas |
-| **Otimização** | Optuna com busca Bayesiana — 20 trials por modelo (sweet-spot qualidade/tempo) |
-| **Ablação** | Comparação sistemática: Colaborativo vs. Conteúdo vs. Híbrido vs. Híbrido+Temporal |
-| **Diagnóstico** | Gini index = 0.016 (baixo viés de concentração), Silhouette = 0.8654 pós-sanidade |
-| **Validação estatística** | KS-test p = 1.0 (imputação estatisticamente equivalente aos dados originais) |
-| **PR-AUC** | 0.9153 (substituiu ROC-AUC após identificar desbalanceamento 73/27%) |
+| Aspecto | Estado | Detalhe |
+|---------|--------|---------|
+| **Versionamento** | ✅ real | MLflow instrumentado; `mlflow_experiments.db` versionado no repo |
+| **PR-AUC** | ✅ real | Calculado em `train_layer1_classifier.py:105`; a troca de ROC-AUC por PR-AUC pelo desbalanceamento 73/27 é decisão correta e está no código |
+| **Silhouette** | ✅ real | Busca de k por silhouette em amostra (`train_layer2_clustering.py:92-111`). O valor 0.8654 citado antes não é reproduzível a partir deste repo |
+| **KS-test** | ✅ real | `src/validation/validate_kstest.py` |
+| **Otimização (Optuna)** | ❌ inválido | `optimization.py` roda sobre `np.random.rand(2000, 10)` — ruído, não os dados do projeto |
+| **Ablação** | ❌ inválido | `ablation.py` não desliga camada nenhuma; os scores são `np.random.uniform` |
+| **Gini = 0.016** | ❌ inválido | Derivado das recomendações aleatórias de `run_experiments.py` |
 
 ```bash
 # Visualizar todos os experimentos no MLflow UI
@@ -330,7 +387,7 @@ mlflow ui --backend-store-uri sqlite:///scripts/experimentation/mlflow.db
 | **asyncpg Pool** | SQLAlchemy Sync | Até 3× mais rápido; suporta 1000+ RPS em hardware modesto |
 | **Batch Insert (5.000)** | Inserts unitários | Reduz RTTs: ingestão de 122k jogos caiu de horas para ~90s |
 | **PR-AUC como métrica** | ROC-AUC | Dataset desbalanceado (73/27%) — ROC-AUC era enganoso |
-| **KMeans` (k=3)** | HDBSCAN inicial | Silhouette subiu de 0.36 → 0.87 após retreino com 309k sessões |
+| **KMeans** | HDBSCAN | HDBSCAN foi descartado; o clusterizador do projeto é KMeans com k por silhouette. O arquivo `hdbscan_model.pkl` é apenas um nome legado |
 | **`equilibrado` como padrão** | `conservador` como padrão | Melhor onboarding sem sacrificar qualidade para novos usuários |
 
 ---

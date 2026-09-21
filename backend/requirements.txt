@@ -16,5 +16,5 @@ pandas>=2.0.0
 scikit-learn
 scipy
 joblib
-lightfm
-hdbscan
+# lightfm/hdbscan removidos: nao sao importados por nenhum modulo.
+# Camada 2 = KMeans (sklearn), camada 3 = TruncatedSVD (sklearn).

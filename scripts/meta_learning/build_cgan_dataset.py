@@ -16,14 +16,14 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "data"
 
 def load_ranker_bundle():
     """
-    Carrega o bundle do ranker SVD (lightfm_model.pkl ou híbrido equivalente).
+    Carrega o bundle do ranker TruncatedSVD (svd_ranker.pkl).
 
     Este bundle expõe embeddings de usuário e jogo, além de mapas user_id → índice.
     """
-    ranker_path = MODEL_DIR / "lightfm_model.pkl"
+    ranker_path = MODEL_DIR / "svd_ranker.pkl"
     if not ranker_path.exists():
-        # fallback para um possível modelo híbrido com a mesma estrutura
-        ranker_path = MODEL_DIR / "hybrid_ranker.pkl"
+        # nome legado gravado por versoes anteriores do treino da camada 3
+        ranker_path = MODEL_DIR / "lightfm_model.pkl"
     if not ranker_path.exists():
         raise FileNotFoundError("Nenhum modelo de ranker encontrado em scripts/modelos.")
     return joblib.load(ranker_path)

@@ -30,6 +30,7 @@ class _ModelPaths:
     cluster: Path
     cluster_legacy: Path  # fallback for hdbscan_model.pkl
     ranker: Path
+    ranker_legacy: Path  # fallback for lightfm_model.pkl
     cgan_dir: Path
 
     def resolve_cluster(self) -> Path:
@@ -39,6 +40,17 @@ class _ModelPaths:
             Path: Path to the cluster model file that exists on disk.
         """
         return self.cluster if self.cluster.exists() else self.cluster_legacy
+
+    def resolve_ranker(self) -> Path:
+        """Return the ranker model path, falling back to the legacy name.
+
+        The layer-3 ranker is a ``TruncatedSVD`` bundle. Older runs wrote it to
+        ``lightfm_model.pkl``; LightFM was never used by this project.
+
+        Returns:
+            Path: Path to the ranker model file that exists on disk.
+        """
+        return self.ranker if self.ranker.exists() else self.ranker_legacy
 
 
 @dataclass(frozen=True)
@@ -66,7 +78,8 @@ MODEL_PATHS = _ModelPaths(
     classifier=_MODELS_DIR / "classificador_rf.pkl",
     cluster=_MODELS_DIR / "kmeans_clusters.pkl",
     cluster_legacy=_MODELS_DIR / "hdbscan_model.pkl",
-    ranker=_MODELS_DIR / "lightfm_model.pkl",
+    ranker=_MODELS_DIR / "svd_ranker.pkl",
+    ranker_legacy=_MODELS_DIR / "lightfm_model.pkl",
     cgan_dir=_MODELS_DIR / "cgan",
 )
 
