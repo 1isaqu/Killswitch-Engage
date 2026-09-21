@@ -612,12 +612,18 @@ killswitch-engage/
 └── README.md                   # Este arquivo
 ```
 
-> ⚠️ **`src/models/` não está neste repositório.** A regra `models/` do `.gitignore`
-> (pensada para artefatos `.pkl`) casava também com `src/models/` e impediu que o
-> código dos treinadores fosse versionado. A regra foi corrigida para `/models/`,
-> mas os arquivos precisam ser adicionados de volta pelo autor. Enquanto isso,
-> `tests/test_models/test_rf_trainer.py` não coleta — ele importa
-> `src.models.classifier.rf_trainer`, que não existe aqui.
+> ⚠️ **`src/models/` foi perdido.** A regra `models/` do `.gitignore` (pensada para
+> artefatos `.pkl`) casava também com `src/models/`, então o código dos treinadores
+> nunca chegou a ser versionado — não está em commit nenhum do histórico. A cópia
+> local do autor também se perdeu. A regra foi corrigida para `/models/`, de modo
+> que o diretório volta a ser versionável se for reescrito.
+>
+> `tests/test_models/` foi removido junto: testava `RandomForestTrainer`, uma classe
+> que não existe mais em lugar algum. Os testes continuam no histórico do git, caso
+> sirvam de referência para reescrever a classe.
+>
+> O treino da camada 1 segue funcional por `scripts/train_layer1_classifier.py`, que
+> é independente de `src/models/`.
 
 ---
 
