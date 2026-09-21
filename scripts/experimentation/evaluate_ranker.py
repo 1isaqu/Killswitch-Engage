@@ -36,6 +36,8 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.decomposition import TruncatedSVD
 
+from bpr import BPRRanker
+
 SEED = 42
 N_USERS = 10_000
 N_GAMES = 122_507
@@ -376,6 +378,33 @@ def main() -> None:
     print("   são os slots aleatórios de `exploracao`.)")
 
     varrer_despopularizacao(U, V, popularidade, users, verdade, n_games, vistos)
+
+    # ── BPR: perda de ranqueamento em vez de reconstrução ───────────────────
+    print("\n\nBPR-MF (perda de ranqueamento par-a-par)")
+    print("Hipótese: SVD otimiza reconstrução, não ranking. BPR otimiza ranking.\n")
+
+    bpr_users = treino.usuario_id.values.astype(np.int64)
+    bpr_items = treino.jogo_id.values.astype(np.int64)
+
+    for usar_bias in (True, False):
+        rotulo = "com viés de item" if usar_bias else "sem viés de item"
+        print(f"Treinando BPR ({rotulo}, n_factors=50) ...")
+        modelo = BPRRanker(n_factors=50, n_epochs=30, use_item_bias=usar_bias, seed=SEED)
+        modelo.fit(bpr_users, bpr_items, n_users, n_games)
+
+        completo = avaliar(f"BPR {rotulo}", modelo.scores, users, verdade, n_games)
+        descoberta = avaliar(
+            f"BPR {rotulo} (descoberta)", modelo.scores, users, verdade, n_games, vistos=vistos
+        )
+        print(
+            f"  tarefa completa    P@10 {completo.precision:.4f}  "
+            f"NDCG {completo.ndcg:.4f}  cobertura {completo.cobertura:.2%}"
+        )
+        print(
+            f"  só itens novos     P@10 {descoberta.precision:.4f}  "
+            f"NDCG {descoberta.ndcg:.4f}  cobertura {descoberta.cobertura:.2%}\n"
+        )
+
     diagnosticar_sinal(treino, verdade, np.random.default_rng(0))
 
 

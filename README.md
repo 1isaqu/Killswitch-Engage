@@ -207,8 +207,49 @@ se usa são perdas de ranking par-a-par — BPR ou WARP.
 
 > 🎯 Ironia útil: **LightFM**, a biblioteca que o README alegava usar e que o código
 > nunca importou, implementa exatamente WARP, e é a ferramenta indicada para este
-> problema. Trocar o SVD por um ranker treinado com perda de ranking tornaria a
-> alegação verdadeira *e* atacaria a causa certa. Não testado ainda.
+> problema.
+
+#### Segunda tentativa: BPR em vez de SVD (também não funcionou)
+
+`scripts/experimentation/bpr.py` implementa BPR-MF (Rendle et al., 2009), que
+otimiza ranqueamento par-a-par em vez de reconstrução. Hiperparâmetros: 50
+fatores (mesma capacidade do SVD, para isolar o efeito da perda), lr 0.05,
+30 épocas, L2 0.01, 1 negativo por positivo.
+
+| Modelo | P@10 completo | P@10 descoberta |
+|---|---|---|
+| **SVD(50)** | **0.1371** | 0.0069 |
+| BPR sem viés de item | 0.0710 | 0.0060 |
+| Baseline: popularidade | 0.0655 | **0.0116** |
+| BPR com viés de item | 0.0642 | 0.0039 |
+
+BPR perdeu para o SVD nas duas tarefas. A causa aparece na curva de perda, que cai
+até **0.0397** — perda BPR perto de zero significa que o modelo separa positivo de
+negativo aleatório quase sempre. Com densidade de 0.02%, um negativo sorteado
+uniformemente é trivialmente fácil. O modelo aprendeu "jogo que eu joguei" contra
+"jogo qualquer", que é uma tarefa fácil e inútil para ordenar candidatos plausíveis.
+
+É a fraqueza conhecida do BPR com amostragem uniforme, e é exatamente o que **WARP**
+corrige: reamostra até encontrar um negativo que viola o ranking, treinando em
+negativos difíceis. A recomendação de usar LightFM/WARP continua de pé — agora com
+evidência de *por quê*, não por analogia.
+
+#### Onde isso deixa o projeto
+
+Três tentativas, nenhuma bate a popularidade na descoberta: SVD (0.0069),
+despopularização (piora), BPR (0.0060) contra popularidade (0.0116).
+
+Isso aponta para o que **não** foi tentado: sinal de **conteúdo**. As camadas 1
+(RandomForest sobre features de jogo) e 2 (KMeans sobre perfil de gênero) existem
+treinadas e nunca foram ligadas à inferência. Para um item que ninguém no cluster
+do usuário jogou, conteúdo é a única fonte de sinal — nenhum método colaborativo
+tem o que usar.
+
+> ⚠️ Ressalva honesta: o gerador sintético sorteia favoritos ∝ afinidade_de_gênero ×
+> popularidade. Ou seja, **o próprio gerador determina que features de conteúdo
+> funcionariam bem aqui** — testar isso neste dataset seria medir a premissa do
+> gerador, não a qualidade do método. A conclusão só vale de verdade sobre dados
+> reais de interação.
 
 ---
 
