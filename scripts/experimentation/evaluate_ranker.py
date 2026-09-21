@@ -137,6 +137,55 @@ def ndcg_at_k(recomendados: np.ndarray, relevantes: set, k: int) -> float:
     return dcg / idcg if idcg > 0 else 0.0
 
 
+def varrer_despopularizacao(U, V, popularidade, users, verdade, n_games, vistos) -> None:
+    """Penaliza o score pela popularidade do item e mede o efeito na descoberta.
+
+    Sintoma tratado: o ranker acerta mais reordenando o que o usuário já conhece
+    do que revelando novidade — na tarefa de descoberta ele perde para a própria
+    baseline de popularidade. O ajuste padrão é penalizar itens populares.
+
+    Forma usada (segura para score negativo, ao contrário de `score / pop**a`):
+
+        score' = minmax(score) - alpha * minmax(log1p(popularidade))
+
+    Ambos os termos ficam em [0, 1], então `alpha` é diretamente interpretável:
+    0 = sem penalidade, 1 = popularidade pesa tanto quanto o score do modelo.
+    """
+    print("\n\nDESPOPULARIZAÇÃO DO SCORE (tarefa de descoberta)")
+    print("score' = minmax(score) - alpha * minmax(log1p(pop))\n")
+
+    p_log = np.log1p(popularidade.astype(float))
+    lo, hi = p_log.min(), p_log.max()
+    p_norm = (p_log - lo) / (hi - lo) if hi > lo else np.zeros_like(p_log)
+
+    # Referência: a baseline de popularidade na MESMA tarefa
+    ref = avaliar("pop", lambda u: popularidade, users, verdade, n_games, vistos=vistos)
+    print(f"{'alpha':>6} {'P@10':>9} {'NDCG@10':>9} {'Cobertura':>11}   vs baseline pop.")
+    print("-" * 62)
+
+    melhor = (None, -1.0)
+    for alpha in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 1.0]:
+
+        def scorer(u, a=alpha):
+            s = V @ U[u]
+            smin, smax = s.min(), s.max()
+            s = (s - smin) / (smax - smin) if smax > smin else np.zeros_like(s)
+            return s - a * p_norm
+
+        res = avaliar(f"a={alpha}", scorer, users, verdade, n_games, vistos=vistos)
+        razao = res.precision / ref.precision if ref.precision > 0 else float("nan")
+        marca = "  <-- melhor" if res.precision > melhor[1] else ""
+        if res.precision > melhor[1]:
+            melhor = (alpha, res.precision)
+        print(
+            f"{alpha:>6.1f} {res.precision:>9.4f} {res.ndcg:>9.4f} "
+            f"{res.cobertura:>10.2%}   {razao:>6.2f}x{marca}"
+        )
+
+    print(f"\nBaseline popularidade na mesma tarefa: P@10 = {ref.precision:.4f}")
+    print(f"Melhor alpha = {melhor[0]} (P@10 = {melhor[1]:.4f})")
+
+
 def diagnosticar_sinal(treino: pd.DataFrame, verdade: dict, rng) -> None:
     """Mede se existe sinal COLABORATIVO nos dados.
 
@@ -326,6 +375,7 @@ def main() -> None:
     print("   ordenado por score, ele não diversifica por si só — quem diversifica")
     print("   são os slots aleatórios de `exploracao`.)")
 
+    varrer_despopularizacao(U, V, popularidade, users, verdade, n_games, vistos)
     diagnosticar_sinal(treino, verdade, np.random.default_rng(0))
 
 

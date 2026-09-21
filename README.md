@@ -176,6 +176,40 @@ descoberta**. Esse é o problema em aberto do projeto, e agora ele tem um númer
 > fallback de relaxamento. Thresholds por **percentil** do score do usuário
 > resolveriam, em vez de constantes absolutas.
 
+#### Tentativa de corrigir a descoberta: despopularização (não funcionou)
+
+A hipótese padrão para "o ranker perde para popularidade na descoberta" é viés de
+popularidade: o modelo empurraria itens populares demais. O ajuste clássico é
+penalizar o score pela popularidade do item. Testado com
+
+```
+score' = minmax(score) - alpha * minmax(log1p(popularidade))
+```
+
+| alpha | P@10 | NDCG@10 | Cobertura | vs. baseline popularidade |
+|---|---|---|---|---|
+| **0.0** | **0.0069** | 0.0155 | 0.24% | 0.60× |
+| 0.1 | 0.0038 | 0.0102 | 0.68% | 0.33× |
+| 0.3 | 0.0009 | 0.0024 | 0.31% | 0.07× |
+| 0.5 | 0.0003 | 0.0009 | 0.14% | 0.02× |
+| 1.0 | 0.0000 | 0.0000 | 0.06% | 0.00× |
+
+**Piora monotonicamente. O melhor alpha é zero** — ou seja, nenhuma penalização.
+
+A hipótese estava errada: o SVD não está falhando por viés de popularidade. Neste
+dataset a popularidade é **genuinamente preditiva** (os favoritos são sorteados
+∝ afinidade_de_gênero × popularidade), então penalizá-la joga fora sinal real. É
+por isso que a baseline de popularidade é difícil de bater na descoberta.
+
+O problema real é outro: o `TruncatedSVD` otimiza **reconstrução** da matriz de
+interações (erro quadrático), não **ranqueamento**. Para feedback implícito, o que
+se usa são perdas de ranking par-a-par — BPR ou WARP.
+
+> 🎯 Ironia útil: **LightFM**, a biblioteca que o README alegava usar e que o código
+> nunca importou, implementa exatamente WARP, e é a ferramenta indicada para este
+> problema. Trocar o SVD por um ranker treinado com perda de ranking tornaria a
+> alegação verdadeira *e* atacaria a causa certa. Não testado ainda.
+
 ---
 
 ## 💼 4. Impacto de Negócio — não medido
