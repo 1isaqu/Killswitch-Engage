@@ -116,130 +116,65 @@ A tabela publicada anteriormente era o segundo run.
 
 ### Medição honesta (`scripts/experimentation/evaluate_ranker.py`)
 
-Split temporal real (últimas 20% das sessões de cada usuário fora do treino),
-SVD treinado só no train, avaliado contra baselines. **Os dados originais foram
-perdidos, então o script regenera o dataset com o mesmo processo generativo de
-`populate_supabase_v2.py`** — os números medem o algoritmo sobre dados com a mesma
-estrutura, não o dataset original. Reproduza com `--csv-dir data/ml_ready`.
+Split temporal real: as últimas 20% das sessões de cada usuário saem do treino e
+viram gabarito. Nada é derivado da própria predição, e há baselines para comparar.
 
-| Modelo | P@10 | R@10 | NDCG@10 | Cobertura |
-|---|---|---|---|---|
-| **SVD (camada 3)** | **0.0149** | 0.0119 | 0.0185 | 1.52% |
-| SVD sem itens já vistos | **0.0000** | 0.0000 | 0.0000 | 1.56% |
-| Baseline: popularidade | 0.0004 | 0.0008 | 0.0007 | 0.01% |
-| Baseline: aleatório | 0.0001 | 0.0001 | 0.0000 | 15.09% |
+> Os dados originais não existem mais (o projeto Supabase foi pausado por
+> inatividade, e o gerador nunca teve seed — então nunca foram reproduzíveis).
+> O dataset agora é gerado localmente e de forma determinística por
+> `src/data_preparation/generate_synthetic_data.py`.
 
-O SVD bate popularidade por ~37× e aleatório por ~149×. Mas a segunda linha é a
-que importa: **removendo os jogos que o usuário já jogou, a precisão vai a zero
-exato.** Todo o acerto vem de re-recomendar o que a pessoa já tinha jogado — o
-modelo não generaliza nada.
+#### O gerador antigo não continha sinal colaborativo
 
-### Por que — o problema está nos dados, não no modelo
+Rodando a avaliação sobre dados no formato original (favoritos sorteados
+uniformemente do catálogo, independentes por usuário — `populate_supabase_v2.py:119`):
 
-O diagnóstico do mesmo script explica:
+| Modelo | P@10 | NDCG@10 |
+|---|---|---|
+| SVD (camada 3) | 0.0149 | 0.0185 |
+| **SVD sem itens já vistos** | **0.0000** | **0.0000** |
+| Baseline: popularidade | 0.0004 | 0.0007 |
 
-| Medida | Valor |
-|---|---|
-| Jogos em comum entre dois usuários aleatórios | **0.001** (99.9% dos pares não compartilham nada) |
-| Itens do holdout que o próprio usuário já jogou | 66.7% |
-| Concentração de popularidade no top-1% dos jogos | 4.7% (Steam real: 60–80%) |
+Removendo os jogos que o usuário já jogou, a precisão ia a **zero exato**: todo o
+acerto era re-recomendar o próprio histórico. O diagnóstico explicava — 99.9% dos
+pares de usuários não compartilhavam nenhum jogo, e o top-1% dos títulos
+concentrava só 4.7% das interações. Filtragem colaborativa é achar usuários
+parecidos; não havia nenhum para achar.
 
-A causa está em `populate_supabase_v2.py:119`: os jogos favoritos de cada usuário
-são sorteados **uniformemente do catálogo inteiro, de forma independente por
-usuário**. Sem gostos compartilhados não existe sinal colaborativo para descobrir
-— e filtragem colaborativa é, por definição, encontrar usuários parecidos. A
-popularidade também fica achatada, então nem a baseline tem o que explorar.
+#### Com o gerador corrigido
 
-**Nenhum ajuste de modelo resolve isso.** A correção é no gerador: os favoritos
-precisam vir de grupos latentes compartilhados (afinidade por gênero, por exemplo),
-para que usuários se sobreponham. Enquanto isso não mudar, a camada 3 é
-intestável — o que também explica por que os alvos da cGAN colapsaram.
+O novo gerador dá gêneros aos jogos, afinidade por gênero aos usuários (Dirichlet
+esparsa) e popularidade em lei de potência. Aí sim existe estrutura a descobrir:
 
-> A telemetria "online" (CTR, tempo de sessão, taxa de aceitação) também foi removida:
-> é amostrada de distribuições escolhidas a mão em `online_metrics.py`. Nenhum usuário
-> real interagiu com o sistema.
+| Medida | Gerador antigo | Gerador novo |
+|---|---|---|
+| Jogos em comum entre 2 usuários | 0.001 | **0.227** |
+| Pares com alguma sobreposição | 0.1% | **17.6%** |
+| Top-1% dos jogos / interações | 4.7% | **52.9%** (Steam real: 60–80%) |
 
-### 3.2 Os 3 Modos de Recomendação
+| Modelo | P@10 | R@10 | NDCG@10 |
+|---|---|---|---|
+| **SVD (camada 3)** | **0.1371** | 0.3770 | 0.4009 |
+| Baseline: popularidade | 0.0655 | 0.2031 | 0.1500 |
+| SVD sem itens já vistos | 0.0069 | 0.0193 | 0.0155 |
+| **Popularidade sem itens vistos** | **0.0116** | 0.0439 | 0.0305 |
+| Baseline: aleatório | 0.0001 | 0.0000 | 0.0001 |
 
-O sistema expõe três arquétipos de recomendação que permitem ao usuário controlar o trade-off entre **precisão e descoberta**:
+**Leitura honesta das duas metades:**
 
-| Modo | Threshold | Exploração | Cobertura (100 users) | Score Médio | Perfil |
-|------|-----------|------------|----------------------|-------------|--------|
-| 🎯 **Conservador** | 0.7 | 10% | 0.54% | **3.34** | Máxima precisão — apenas os melhores candidatos |
-| ⚖️ **Equilibrado** | 0.5 | 20% | 0.56% | 3.14 | Balanceado — modo padrão para a maioria |
-| 🎲 **Aventureiro** | 0.3 | 30% | 0.57% | 2.84 | Exploração e descoberta de títulos inesperados |
+- Na tarefa completa, o SVD bate popularidade por **2.1×** — a camada colaborativa
+  agrega valor real sobre "recomende o mais jogado".
+- Na tarefa de **descoberta** (só itens que o usuário nunca tocou), **a popularidade
+  vence o SVD** (0.0116 contra 0.0069). O ganho da camada 3 vem majoritariamente de
+  reordenar o que a pessoa já conhece, não de revelar coisa nova.
 
-> 🔁 **Sobreposição entre Conservador e Aventureiro: apenas 4/10 jogos em comum** — diversificação real e mensurável.
+Ou seja: o modelo aprende, mas ainda **não justifica sua complexidade para
+descoberta**. Esse é o problema em aberto do projeto, e agora ele tem um número.
 
-![Comparativo dos 3 Modos — Cobertura Linear](reports/figures/coverage_linear.png)
-
-### 3.3 Análise de Cobertura e Escalabilidade
-
-A cobertura segue uma **Lei de Potência** com R² = 0.9474, comprovando que o baixo percentual atual é uma característica do volume de dados sintéticos — e não um defeito do modelo.
-
-**Dados empíricos (10.000 usuários sintéticos do ranker, seed=42):**
-
-| Usuários | Jogos Únicos | Cobertura |
-|----------|-------------|-----------|
-| 100 | 633 | 0.52% |
-| 500 | 1.565 | 1.28% |
-| 1.000 | 2.148 | 1.75% |
-| 2.000 | 2.733 | 2.23% |
-| 5.000 | 3.300 | 2.69% |
-| **10.000** | **3.768** | **3.08%** |
-
-**Regressão log-log — parâmetros do modelo de potência:**
-
-| Parâmetro | Valor | Interpretação |
-|-----------|-------|---------------|
-| **Expoente (a)** | `0.3673` | Cada 10× usuários → cobertura +2.3× |
-| **Intercepto (b)** | `-2.1099` | Escala base do modelo |
-| **R²** | `0.9474` | Modelo explica **94.7%** da variação |
-| **Equação** | `cob = exp(-2.1099) × n^0.3673` | Lei de potência sublinear (Long-Tail) |
-
-**Projeções com IC 95%:**
-
-| Usuários | Cobertura Central | IC 95% |
-|----------|-------------------|--------|
-| 100.000 | 8.3% | [6.4%, 10.9%] |
-| **500.000** | **15.0% ← meta** | [11.5%, 19.7%] |
-| 1.000.000 | 19.4% | [14.8%, 25.4%] |
-| 2.000.000 | 25.0% | [19.1%, 32.7%] |
-| 5.000.000 | 35.0% | [26.8%, 45.8%] |
-
-> 📈 **Conclusão:** Com ~497.364 usuários reais, o sistema atinge 15% de cobertura — nível comparável a grandes plataformas de recomendação.
-
-![Escala Log-Log — Lei de Potência Confirmada](reports/figures/coverage_loglog.png)
-![Projeção com Intervalo de Confiança 95%](reports/figures/coverage_projection_with_ci.png)
-
----
-
-### 3.4 Camada 4 — cGAN (meta-learner de threshold)
-
-**O que é real:** há uma GAN condicional de verdade em `scripts/meta_learning/`.
-Generator e Discriminator condicionados num vetor de 147 features de comportamento,
-loss adversarial `BCEWithLogitsLoss`, TTUR (lr_D 4e-4 > lr_G 1e-4), `n_critic`,
-gradient clipping e um termo L1 auxiliar. O treino aconteceu de fato: os
-checkpoints em `models/` carregam `num_batches_tracked = 40.500`, consistente com
-as 500 épocas da curva de loss (`reports/figures/training_curves.png`).
-
-**O que não funcionou:** o gerador sofreu **mode collapse**. Como mostra
-`reports/figures/18_cgan_threshold_dist.png`, praticamente toda saída colapsa em
-~0.30, independentemente do usuário condicionado — em `19_cgan_final_reality_check.png`
-a linha do perfil "Veterano/HC" é horizontal. A loss do discriminador fica presa em
-~0.65 (≈ ln 2, ou seja, no acaso) durante as 500 épocas: o componente adversarial
-não contribuiu, e o que restou foi um regressor L1 que aprendeu a moda do alvo.
-
-**Sobre o "MAE 0.0156 vs 0.2011":** os alvos (`best_threshold`) também se concentram
-em 0.3, então um modelo que sempre responde 0.30 erra ~0.018. A "baseline estática"
-é a constante **0.5**, cujo erro é |0.5 − 0.3| = 0.20 — daí o 0.2011. Uma baseline
-trivial do tipo "responda a mediana do alvo" empataria com a cGAN. **O ganho de ~13×
-é artefato da constante escolhida, não evidência de aprendizado.** (As duas figuras
-ainda divergem entre si: `19_...png` traz 0.0182 no título e 0.0156 na legenda.)
-
-Além disso, a cGAN treinada **não é carregada em lugar nenhum** — não há
-`load_state_dict` no repositório. Os thresholds usados em produção vêm do dicionário
-fixo em `recomendador.py`.
+> Pendente relacionado: com a escala corrigida, os thresholds fixos (0.3/0.5/0.7)
+> ficam mal calibrados — o modo conservador deixa passar só ~2 itens e cai no
+> fallback de relaxamento. Thresholds por **percentil** do score do usuário
+> resolveriam, em vez de constantes absolutas.
 
 ---
 

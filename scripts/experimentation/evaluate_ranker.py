@@ -264,6 +264,16 @@ def main() -> None:
             "SVD sem itens já vistos", lambda u: V @ U[u], users, verdade, n_games, vistos=vistos
         ),
         avaliar("Baseline: popularidade", lambda u: popularidade, users, verdade, n_games),
+        # Comparação justa para a linha "sem itens já vistos": a baseline também
+        # precisa ser avaliada na tarefa de descoberta, não na de memorização.
+        avaliar(
+            "Popularidade sem itens vistos",
+            lambda u: popularidade,
+            users,
+            verdade,
+            n_games,
+            vistos=vistos,
+        ),
         avaliar(
             "Baseline: aleatório",
             lambda u: rng.random(n_games),
