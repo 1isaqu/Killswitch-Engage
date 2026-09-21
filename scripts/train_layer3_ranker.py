@@ -14,7 +14,9 @@ USER_DATA = "data/ml_ready/usuarios_features.csv"
 CLUSTERING_MODEL = "scripts/modelos/kmeans_clusters.pkl"
 LEGACY_CLUSTERING_MODEL = "scripts/modelos/hdbscan_model.pkl"
 
-MODEL_OUTPUT = "scripts/modelos/lightfm_model.pkl"  # Mantendo nome para integração
+# O modelo desta camada e um TruncatedSVD, nao LightFM. Gravamos com o nome
+# correto e mantemos leitura do nome legado nos consumidores.
+MODEL_OUTPUT = "scripts/modelos/svd_ranker.pkl"
 
 def train_ranker() -> None:
     df_sessions = pd.read_csv(SESSION_DATA)

@@ -1,3 +1,16 @@
+"""ATENCAO — ESTE ESTUDO DE ABLACAO NAO E REAL.
+
+Nenhuma camada do pipeline e efetivamente desligada aqui. `_mock_score_from_features`
+devolve `np.random.uniform` com faixas escolhidas a mao (maiores para "hybrid"),
+de modo que o resultado "hibrido vence" esta codificado no gerador de numeros
+aleatorios, nao medido. Os valores de `ablation_study.md` e o ganho percentual
+derivado deles NAO sao evidencia de qualidade do modelo.
+
+Para virar um experimento de verdade, este modulo precisa instanciar o
+RecomendadorService com cada camada desativada e medir contra um ground truth
+independente (ver aviso em run_experiments.py).
+"""
+
 import numpy as np
 
 def _mock_score_from_features(user_features: dict, game_features: dict, include_temporal=True, include_embeddings=True, mode="hybrid") -> float:

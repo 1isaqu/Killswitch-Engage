@@ -3,7 +3,20 @@
 
 ---
 
-## ✅ Resultado Geral: APROVADO — Pronto para Deploy
+## ⚠️ Resultado Geral: NÃO REPRODUZÍVEL A PARTIR DESTE REPOSITÓRIO
+
+> **Correção (auditoria).** Este relatório descreve uma execução na máquina do autor,
+> não o estado do repositório publicado. Especificamente:
+>
+> - A suíte **não coleta** aqui: `tests/test_models/test_rf_trainer.py` importa
+>   `src.models.classifier.rf_trainer`, e `src/models/` não está versionado (a regra
+>   `models/` do `.gitignore` o excluía; já corrigida para `/models/`, mas os arquivos
+>   precisam ser readicionados). Os "14 passed" abaixo não são reproduzíveis por
+>   quem clonar o projeto.
+> - O Flake8/Bandit são reportados sobre `src/models/`, diretório ausente no repo.
+> - Os artefatos `.pkl`/`.pth` listados abaixo são gitignorados e não acompanham o clone.
+>
+> O relatório é mantido como registro histórico, não como atestado de qualidade.
 
 ---
 

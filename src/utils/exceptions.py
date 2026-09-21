@@ -28,8 +28,8 @@ class ModelNotLoadedError(KillswitchError):
         model_name (str): Descriptive name of the missing model.
 
     Example:
-        >>> raise ModelNotLoadedError("LightFM ranker")
-        ModelNotLoadedError: LightFM ranker model is not loaded.
+        >>> raise ModelNotLoadedError("SVD ranker")
+        ModelNotLoadedError: SVD ranker model is not loaded.
         Check that the artefact file exists and the service started correctly.
     """
 

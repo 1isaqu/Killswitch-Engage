@@ -29,7 +29,11 @@ class RecomendadorService:
             cluster_legacy = os.path.join(self.model_dir, "hdbscan_model.pkl")
             c2_path = cluster_main if os.path.exists(cluster_main) else cluster_legacy
 
-            c3_path = os.path.join(self.model_dir, "lightfm_model.pkl")
+            # O ranker da camada 3 e um bundle TruncatedSVD. Runs antigos
+            # gravavam em lightfm_model.pkl; LightFM nunca foi usado aqui.
+            ranker_main = os.path.join(self.model_dir, "svd_ranker.pkl")
+            ranker_legacy = os.path.join(self.model_dir, "lightfm_model.pkl")
+            c3_path = ranker_main if os.path.exists(ranker_main) else ranker_legacy
 
             if not all(os.path.exists(p) for p in [c1_path, c2_path, c3_path]):
                 logger.warning("Um ou mais modelos de recomendação não foram encontrados.")

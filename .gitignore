@@ -62,7 +62,10 @@ scripts/experimentation/mlflow.db
 scripts/experimentation/mlflow_experiments.db
 
 # ── Modelos treinados (artefatos grandes) ────────────────────────
-models/
+# NOTA: a barra inicial ancora a regra na raiz. Sem ela, o padrao "models/"
+# casava tambem com src/models/ e excluia o CODIGO-FONTE dos treinadores
+# (src/models/classifier/rf_trainer.py etc.) do versionamento.
+/models/
 scripts/modelos/*.pkl
 scripts/modelos/*.joblib
 scripts/modelos/*.pth

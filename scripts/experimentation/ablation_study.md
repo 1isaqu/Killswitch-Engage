@@ -1,5 +1,9 @@
 # Estudo de Ablação (Filtros, Temporal, Embeddings)
 
+> ⚠️ **NUMEROS NAO VALIDOS.** Gerados por `ablation.py`, que nao desliga camada
+> nenhuma: os scores vem de `np.random.uniform` com faixas escolhidas a mao. O
+> resultado "hibrido vence" esta embutido no sorteio. Nao usar como evidencia.
+
 |                                              |   Pseudo_MAP |   Pseudo_NDCG |   Cost_Ms |
 |:---------------------------------------------|-------------:|--------------:|----------:|
 | Mode=collaborative_only_Temp=False_Emb=False |     0.521713 |      0.586927 |        15 |

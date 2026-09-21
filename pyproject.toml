@@ -29,8 +29,10 @@ dependencies = [
     "scikit-learn>=1.3.0",
     "scipy>=1.11.0",
     "joblib>=1.3.0",
-    "lightfm>=1.17",
-    "hdbscan>=0.8.33",
+    # NOTA: lightfm e hdbscan foram removidos. Nenhum modulo do projeto os
+    # importa: a camada 2 usa sklearn.cluster.KMeans e a camada 3 usa
+    # sklearn.decomposition.TruncatedSVD. Declara-los quebrava o build sem
+    # necessidade (lightfm exige toolchain C).
     "torch>=2.0.0",
     # MLOps
     "mlflow>=2.5.0",
@@ -68,7 +70,7 @@ include = '\.pyi?$'
 profile = "black"
 line_length = 99
 known_first_party = ["src"]
-known_third_party = ["fastapi", "pydantic", "sqlalchemy", "asyncpg", "redis", "sklearn", "lightfm", "torch", "mlflow", "optuna"]
+known_third_party = ["fastapi", "pydantic", "sqlalchemy", "asyncpg", "redis", "sklearn", "torch", "mlflow", "optuna"]
 
 [tool.mypy]
 python_version = "3.11"

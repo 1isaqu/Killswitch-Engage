@@ -31,7 +31,7 @@ from src.backend.api import create_app
 def mock_ranker_payload() -> Dict:
     """Return a minimal in-memory ranker bundle for offline unit tests.
 
-    The bundle mimics the structure of ``lightfm_model.pkl`` with 10 users
+    The bundle mimics the structure of ``svd_ranker.pkl`` with 10 users
     and 50 games so that ``RecomendadorService`` can run without real artefacts.
 
     Returns:

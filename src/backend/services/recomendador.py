@@ -45,7 +45,7 @@ class RecomendadorService:
     Layers:
         1. ``classificador`` — RandomForest filters candidate items.
         2. ``clusterer``     — KMeans maps users to archetypes.
-        3. ``ranker``        — SVD-based collaborative ranker (LightFM bundle).
+        3. ``ranker``        — SVD-based collaborative ranker (TruncatedSVD).
 
     The service is instantiated once at application startup. If any artefact
     is missing, ``is_loaded`` is ``False`` and endpoints return ``503``.
@@ -71,7 +71,7 @@ class RecomendadorService:
         try:
             c1_path = MODEL_PATHS.classifier
             c2_path = MODEL_PATHS.resolve_cluster()
-            c3_path = MODEL_PATHS.ranker
+            c3_path = MODEL_PATHS.resolve_ranker()
 
             missing = [str(p) for p in (c1_path, c2_path, c3_path) if not p.exists()]
             if missing:

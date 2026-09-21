@@ -1,3 +1,12 @@
+"""ATENCAO — OTIMIZACAO EXECUTADA SOBRE RUIDO, NAO SOBRE OS DADOS DO PROJETO.
+
+`_load_mocked_data_20_percent` devolve `np.random.rand(2000, 10)` como features e
+`np.random.randint(0, 2, 2000)` como alvo. Qualquer "melhor hiperparametro" ou
+score encontrado aqui descreve ruido aleatorio e nao se transfere para os modelos
+treinados em scripts/train_layer*.py. As entradas "LightFm_SVD_mock" e "cGAN_mock"
+sao placeholders de relatorio, nao resultados de busca.
+"""
+
 import optuna
 import mlflow
 import os

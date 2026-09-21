@@ -1,3 +1,11 @@
+"""ATENCAO — TELEMETRIA SIMULADA, NAO MEDIDA.
+
+CTR, tempo de sessao e taxa de aceitacao sao amostrados de distribuicoes escolhidas
+a mao (Bernoulli sobre os proprios scores + ruido uniforme). Nenhum usuario real
+interagiu com o sistema. Estes numeros sao um exercicio de TDD/estrutura e NAO
+podem ser reportados como metricas de produto.
+"""
+
 import numpy as np
 
 # Retenção mediana base realistica da nossa EDA (em minutos)
