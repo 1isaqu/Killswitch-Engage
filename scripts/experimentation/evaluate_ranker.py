@@ -41,7 +41,8 @@ from bpr import BPRRanker
 SEED = 42
 N_USERS = 10_000
 N_GAMES = 122_507
-N_COMPONENTS = 50
+N_COMPONENTS = 50  # config atual do projeto, mantida para comparação
+K_ESCOLHIDO = 16  # ótimo para descoberta na varredura de validação
 K = 10
 HOLDOUT_FRAC = 0.20
 EVAL_SAMPLE = 2_000  # usuários avaliados (scoring é O(n_users * n_games))
@@ -473,7 +474,16 @@ def main() -> None:
     print("   são os slots aleatórios de `exploracao`.)")
 
     varrer_n_factors(X, users, verdade_val, n_games, vistos)
-    varrer_despopularizacao(U, V, popularidade, users, verdade_val, n_games, vistos)
+
+    # Capacidade escolhida NA VALIDAÇÃO pela varredura acima. Os experimentos
+    # seguintes rodam sobre ela, não sobre o k=50 do projeto — medir um ajuste em
+    # cima de um modelo já sobreajustado mistura os dois efeitos.
+    print(f"\n\nCapacidade escolhida na validação: n_factors = {K_ESCOLHIDO}")
+    svd_k = TruncatedSVD(n_components=K_ESCOLHIDO, random_state=SEED)
+    Uk = svd_k.fit_transform(X)
+    Vk = svd_k.components_.T
+
+    varrer_despopularizacao(Uk, Vk, popularidade, users, verdade_val, n_games, vistos)
 
     # ── BPR: perda de ranqueamento em vez de reconstrução ───────────────────
     print("\n\nBPR-MF (perda de ranqueamento par-a-par)")
@@ -484,8 +494,8 @@ def main() -> None:
 
     for usar_bias in (True, False):
         rotulo = "com viés de item" if usar_bias else "sem viés de item"
-        print(f"Treinando BPR ({rotulo}, n_factors=50) ...")
-        modelo = BPRRanker(n_factors=50, n_epochs=30, use_item_bias=usar_bias, seed=SEED)
+        print(f"Treinando BPR ({rotulo}, n_factors={K_ESCOLHIDO}) ...")
+        modelo = BPRRanker(n_factors=K_ESCOLHIDO, n_epochs=30, use_item_bias=usar_bias, seed=SEED)
         modelo.fit(bpr_users, bpr_items, n_users, n_games)
 
         completo = avaliar(f"BPR {rotulo}", modelo.scores, users, verdade_val, n_games)

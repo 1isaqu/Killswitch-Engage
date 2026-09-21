@@ -224,6 +224,54 @@ descoberta**. Só reduzir para 16 melhora a descoberta em 56% (0.0048 → 0.0075
 > popularidade ainda ganha (0.0075 contra 0.0091 na validação), mas a distância é
 > bem menor do que a medida em k=50.
 
+#### Capacidade de cada camada vs. estatística dos dados
+
+A varredura acima levanta a pergunta para as outras camadas: a capacidade está
+calibrada pelo que os dados sustentam, ou por hábito?
+
+| Camada | Capacidade | Dados disponíveis | Veredito |
+|---|---|---|---|
+| 1 — RandomForest | 25 features, `max_depth=10`, 100 árvores → ~120 amostras por folha se saturada | 122.507 jogos, classes 31/69 | **Adequada.** Única camada bem dimensionada. |
+| 2 — KMeans + PCA | `PCA(n_components=0.95)` retém **21 de 26** colunas | 10.000 usuários; usuário médio toca **4,4 de 22 gêneros** | **Exigente demais.** |
+| 3 — SVD | `n_components=50` → 6,6M parâmetros | 246k interações (**27×**) | **Exigente demais.** Ótimo em k=16. |
+| 4 — cGAN | ~57k parâmetros no generator | ~7.000 linhas (**8×**) | **Muito exigente.** |
+
+**Camada 2.** `PCA(n_components=0.95)` praticamente não reduz nada: guarda 21 de 26
+dimensões. Como a matriz de gênero é esparsa e composicional (cada usuário toca 4,4
+de 22 gêneros, o resto é zero), padronizar e reter 95% da variância preserva
+direções que são ruído. Pior, o `silhouette_score` é calculado nesse espaço de 21
+dimensões, onde distâncias se concentram e a métrica perde poder discriminativo —
+o que torna qualquer silhouette alto reportado nessa configuração pouco confiável.
+Fixar poucos componentes (5–8) ou agrupar direto no perfil de gênero seria mais
+honesto com a estatística dos dados.
+
+**Camada 4.** Medindo o alvo real (`best_threshold`, reproduzindo
+`compute_best_thresholds` sobre o ranker k=16):
+
+| `best_threshold` | massa |
+|---|---|
+| **0.3** | **72,1%** |
+| 0.4 | 9,8% |
+| 0.5 | 7,7% |
+| 0.6 | 3,4% |
+| 0.7 | 4,4% |
+| 0.8 | 2,6% |
+
+Entropia do alvo: **1,45 bits** (máximo possível com 6 valores: 2,59). São **57 mil
+parâmetros para aprender 1,45 bits.** Com essa folga e a perda L1 pesando 5×, o
+mínimo mais fácil de alcançar é emitir a moda constante — que é exatamente o mode
+collapse observado em `reports/figures/18_cgan_threshold_dist.png`.
+
+E a baseline fica em perspectiva:
+
+| Estratégia | MAE |
+|---|---|
+| Sempre prever a moda (0.3) | **0,0659** |
+| Sempre prever 0.5 — *a "baseline estática" do projeto* | 0,1741 |
+
+A baseline escolhida é **2,6× pior que o palpite trivial**. Comparar a cGAN contra
+ela infla o ganho; contra a moda, o espaço de melhora é muito menor.
+
 #### Tentativa de corrigir a descoberta: despopularização (não funcionou)
 
 A hipótese padrão para "o ranker perde para popularidade na descoberta" é viés de
@@ -234,13 +282,15 @@ penalizar o score pela popularidade do item. Testado com
 score' = minmax(score) - alpha * minmax(log1p(popularidade))
 ```
 
-| alpha | P@10 | NDCG@10 | Cobertura | vs. baseline popularidade |
-|---|---|---|---|---|
-| **0.0** | **0.0069** | 0.0155 | 0.24% | 0.60× |
-| 0.1 | 0.0038 | 0.0102 | 0.68% | 0.33× |
-| 0.3 | 0.0009 | 0.0024 | 0.31% | 0.07× |
-| 0.5 | 0.0003 | 0.0009 | 0.14% | 0.02× |
-| 1.0 | 0.0000 | 0.0000 | 0.06% | 0.00× |
+Rodado sobre o modelo k=16 escolhido na validação, não sobre o k=50 sobreajustado:
+
+| alpha | P@10 | NDCG@10 | vs. baseline popularidade |
+|---|---|---|---|
+| **0.0** | **0.0075** | 0.0216 | 0.82× |
+| 0.1 | 0.0053 | 0.0178 | 0.59× |
+| 0.3 | 0.0022 | 0.0114 | 0.24× |
+| 0.5 | 0.0013 | 0.0082 | 0.14× |
+| 1.0 | 0.0001 | 0.0010 | 0.01× |
 
 **Piora monotonicamente. O melhor alpha é zero** — ou seja, nenhuma penalização.
 
@@ -264,12 +314,20 @@ otimiza ranqueamento par-a-par em vez de reconstrução. Hiperparâmetros: 50
 fatores (mesma capacidade do SVD, para isolar o efeito da perda), lr 0.05,
 30 épocas, L2 0.01, 1 negativo por positivo.
 
+Medido na validação, em k=50 e k=16:
+
 | Modelo | P@10 completo | P@10 descoberta |
 |---|---|---|
-| **SVD(50)** | **0.1371** | 0.0069 |
-| BPR sem viés de item | 0.0710 | 0.0060 |
-| Baseline: popularidade | 0.0655 | **0.0116** |
-| BPR com viés de item | 0.0642 | 0.0039 |
+| SVD k=50 | 0.1081 | 0.0048 |
+| **SVD k=16** | 0.0879 | **0.0075** |
+| BPR k=50, sem viés | 0.0710 | 0.0060 |
+| BPR k=16, sem viés | 0.0400 | 0.0045 |
+| BPR k=16, com viés | 0.0246 | 0.0021 |
+| Baseline: popularidade | — | **0.0091** |
+
+BPR **piora** ao reduzir a capacidade, direção oposta à do SVD, e a perda ainda
+cai na época 30 (0.0394). BPR está **subajustado**, não sobreajustado: precisa de
+mais épocas ou negativos mais difíceis, não de menos fatores.
 
 BPR perdeu para o SVD nas duas tarefas. A causa aparece na curva de perda, que cai
 até **0.0397** — perda BPR perto de zero significa que o modelo separa positivo de
