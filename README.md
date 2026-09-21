@@ -245,6 +245,45 @@ o que torna qualquer silhouette alto reportado nessa configuração pouco confi�
 Fixar poucos componentes (5–8) ou agrupar direto no perfil de gênero seria mais
 honesto com a estatística dos dados.
 
+**Camada 2 — medida, não inferida** (`scripts/experimentation/evaluate_clustering.py`).
+Varrendo a dimensionalidade do PCA e escolhendo `k` por silhouette, como o projeto
+faz, e então medindo o que a camada deveria entregar — recomendação por
+"gente parecida com você joga isto", na tarefa de descoberta:
+
+| PCA dims | k | silhouette | P@10 descoberta | IC 95% |
+|---|---|---|---|---|
+| 2 | 3 | **0.4873** | 0.0085 | [0.0074, 0.0097] |
+| 3 | 4 | 0.3535 | 0.0084 | [0.0072, 0.0096] |
+| 5 | 6 | 0.2397 | 0.0087 | [0.0076, 0.0099] |
+| 8 | 10 | 0.2227 | 0.0087 | [0.0076, 0.0099] |
+| **13** | 10 | 0.1817 | **0.0092** | [0.0080, 0.0105] |
+| 21 *(config do projeto)* | 10 | **0.1594** | 0.0089 | [0.0077, 0.0100] |
+| *popularidade global* | — | — | *0.0091* | — |
+
+Dois resultados, os dois contra a intuição:
+
+**1. Silhouette e qualidade de recomendação são anticorrelacionados aqui.** O
+silhouette cai monotonicamente com a dimensão (0.4873 → 0.1594), enquanto a
+precisão fica plana e tem o pico justamente na faixa de pior silhouette. Ou seja,
+**escolher `k` maximizando silhouette — o que `train_layer2_clustering.py` faz —
+otimiza contra o objetivo real.** Silhouette mede coesão geométrica, não utilidade.
+
+**2. Reduzir features não faz a camada recomendar melhor.** A resposta honesta para
+"onde ela precisa de menos features" é: em lugar nenhum. A dimensionalidade não é
+o gargalo — nenhuma configuração bate a popularidade global. A melhor delas fica
++0.0001 acima, com IC de [−0.0009, +0.0011] no bootstrap pareado: **não
+significativa**.
+
+A razão é estrutural: com popularidade de cauda pesada, a popularidade *dentro* de
+um cluster é dominada pelos mesmos títulos de cabeça da popularidade global. O
+agrupamento por afinidade de gênero não é discriminativo o bastante para mudar o
+topo da lista.
+
+> Consequência para o pipeline: ligar a camada 2 à inferência, do jeito que o
+> README original descrevia ("fallback por cluster de arquétipo"), não melhoraria
+> a recomendação. O PCA continua mal calibrado, mas corrigi-lo não resolve —
+> resolve outra coisa.
+
 **Camada 4.** Medindo o alvo real (`best_threshold`, reproduzindo
 `compute_best_thresholds` sobre o ranker k=16):
 
