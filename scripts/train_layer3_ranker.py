@@ -59,6 +59,14 @@ def train_ranker() -> None:
     # Vamos salvar os mapeamentos e os embeddings para reconstrução no serviço
     
     print(f"Variância explicada total: {svd.explained_variance_ratio_.sum():.4f}")
+
+    # Popularidade por item = nº de usuários distintos que interagiram com ele.
+    # Serve de fallback de cold start: sem histórico nao ha embedding de usuario
+    # para consultar, e a media global dos embeddings nao representa popularidade.
+    interactions_bin = interactions.copy()
+    interactions_bin.data = np.ones_like(interactions_bin.data)
+    item_popularity = np.asarray(interactions_bin.sum(axis=0)).ravel()
+    print(f"Popularidade: {int((item_popularity > 0).sum())} jogos com ao menos 1 interação.")
     
     # 4. Salvar tudo
     os.makedirs(os.path.dirname(MODEL_OUTPUT), exist_ok=True)
@@ -69,7 +77,8 @@ def train_ranker() -> None:
         'game_map': game_map,
         'reverse_game_map': {v: k for k, v in game_map.items()},
         'n_components': n_components,
-        'svd': svd
+        'svd': svd,
+        'item_popularity': item_popularity,
     }
     joblib.dump(model_bundle, MODEL_OUTPUT)
     print(f"Modelo salvo em {MODEL_OUTPUT}")

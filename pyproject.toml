@@ -33,7 +33,6 @@ dependencies = [
     # importa: a camada 2 usa sklearn.cluster.KMeans e a camada 3 usa
     # sklearn.decomposition.TruncatedSVD. Declara-los quebrava o build sem
     # necessidade (lightfm exige toolchain C).
-    "torch>=2.0.0",
     # MLOps
     "mlflow>=2.5.0",
     "optuna>=3.3.0",
@@ -48,6 +47,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Experimento encerrado da camada 4 (cGAN), mantido em scripts/meta_learning/.
+# Nao faz parte do pipeline — ver README §3.5.
+meta-learning = [
+    "torch>=2.0.0",
+]
 dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
@@ -70,7 +74,7 @@ include = '\.pyi?$'
 profile = "black"
 line_length = 99
 known_first_party = ["src"]
-known_third_party = ["fastapi", "pydantic", "sqlalchemy", "asyncpg", "redis", "sklearn", "torch", "mlflow", "optuna"]
+known_third_party = ["fastapi", "pydantic", "sqlalchemy", "asyncpg", "redis", "sklearn", "mlflow", "optuna"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -88,7 +92,10 @@ exclude = [".git", "__pycache__", ".venv", "data/", "models/", "mlruns/"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-v --tb=short"
+# tests/legacy_root_tests/ nao sao testes pytest: sao scripts manuais que batem
+# numa API em localhost:8000 no momento do import e chamam exit(). Coletados,
+# derrubam a sessao inteira do pytest com INTERNALERROR.
+addopts = "-v --tb=short --ignore=tests/legacy_root_tests"
 markers = [
     "requires_db: marks tests that need a real database connection (deselect with -m 'not requires_db')",
     "slow: marks slow integration tests",

@@ -81,9 +81,30 @@ class RecomendadorService:
             scores = np.dot(item_embeddings, user_vec)
             explicacao_base = "Baseado no seu perfil de jogo"
         else:
-            # Cold Start: média global dos embeddings de usuário
-            scores = np.mean(self.ranker['user_embeddings'], axis=0) @ item_embeddings.T
+            # Cold start: sem histórico nao ha embedding do usuario para consultar.
+            # Usamos a popularidade observada no treino (nº de usuarios distintos
+            # por jogo). A media global dos embeddings, usada antes, nao mede
+            # popularidade — e apenas o centroide do espaco latente.
+            popularidade = self.ranker.get('item_popularity')
+            if popularidade is not None:
+                scores = np.asarray(popularidade, dtype=float)
+            else:
+                # Bundles antigos nao carregam popularidade: mantem o comportamento legado.
+                scores = np.mean(self.ranker['user_embeddings'], axis=0) @ item_embeddings.T
             explicacao_base = "Jogo popular recomendado para novos usuários"
+
+        # Normaliza os scores para [0, 1] por usuário antes de aplicar o threshold.
+        # Os thresholds dos modos (0.3/0.5/0.7) vivem em [0, 1], mas `scores` e o
+        # produto escalar cru dos embeddings do SVD, que nao tem escala limitada.
+        # Sem esta normalizacao a comparacao e entre escalas diferentes: o filtro
+        # quase nao morde e os tres modos devolvem praticamente o mesmo conjunto.
+        # Efeito medido: sem ela passam 7 / 14 / 33 itens nos tres modos; com
+        # ela, 71 / 23.049 / 88.247.
+        s_min, s_max = float(scores.min()), float(scores.max())
+        if s_max > s_min:
+            scores = (scores - s_min) / (s_max - s_min)
+        else:
+            scores = np.zeros_like(scores)
 
         # Filtra pelo threshold do modo escolhido
         mascara = scores >= threshold

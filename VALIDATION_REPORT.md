@@ -8,11 +8,12 @@
 > **Correção (auditoria).** Este relatório descreve uma execução na máquina do autor,
 > não o estado do repositório publicado. Especificamente:
 >
-> - A suíte **não coleta** aqui: `tests/test_models/test_rf_trainer.py` importa
->   `src.models.classifier.rf_trainer`, e `src/models/` não está versionado (a regra
->   `models/` do `.gitignore` o excluía; já corrigida para `/models/`, mas os arquivos
->   precisam ser readicionados). Os "14 passed" abaixo não são reproduzíveis por
->   quem clonar o projeto.
+> - Os "14 passed" abaixo não são reproduzíveis. Cinco deles eram de
+>   `tests/test_models/test_rf_trainer.py`, que importava `src.models.classifier`
+>   — diretório que o `.gitignore` excluía e que se perdeu, sem estar em commit
+>   algum. Esses testes foram removidos. Além disso, `tests/legacy_root_tests/`
+>   derrubava a coleta inteira do pytest com `INTERNALERROR`, então na prática
+>   **nenhum** teste rodava a partir de um clone. Hoje a suíte roda: 10 passed.
 > - O Flake8/Bandit são reportados sobre `src/models/`, diretório ausente no repo.
 > - Os artefatos `.pkl`/`.pth` listados abaixo são gitignorados e não acompanham o clone.
 >
@@ -26,7 +27,7 @@
 |---|---|---|
 | **Black** | ✅ PASS | 42 arquivos sem alteração necessária |
 | **isort** | ✅ PASS | Imports ordenados corretamente em todos os arquivos |
-| **Flake8** | ✅ PASS | **0 erros** em `src/config/`, `src/utils/`, `src/models/`, `src/backend/`, `tests/` |
+| **Flake8** | ✅ PASS | **0 erros** em `src/config/`, `src/utils/`, `src/backend/`, `tests/` (o `src/models/` citado no original não existe) |
 | **Bandit (SAST)** | ✅ PASS | **0 issues** de segurança en `src/` |
 | **Mypy** | ⚠️ N/A | Não disponível no Python 3.14 — executa no CI/CD |
 | **pre-commit** | ✅ Instalado | `pre-commit installed at .git\hooks\pre-commit` |

@@ -2,7 +2,6 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?logo=redis&logoColor=white)](https://redis.io/)
@@ -15,7 +14,7 @@
 
 ## 📌 1. Visão Geral
 
-**Killswitch Engage** é um sistema completo de recomendação de jogos, construído do zero com ML em produção como objetivo central. O pipeline abrange desde a ingestão e limpeza de **122.507 jogos da Steam** até uma API em produção com latência < 15ms, passando por modelos de aprendizado de máquina treinados sobre **10.000 usuários sintéticos** com histórico realista de sessões.
+**Killswitch Engage** é um sistema completo de recomendação de jogos, construído do zero com ML em produção como objetivo central. O pipeline abrange desde a ingestão e limpeza de **122.507 jogos da Steam** até uma API FastAPI, passando por modelos de aprendizado de máquina treinados sobre **10.000 usuários sintéticos** com histórico realista de sessões.
 
 ### 🔍 O Problema
 
@@ -23,7 +22,7 @@ A Steam possui mais de 50.000 jogos no catálogo. Um usuário novo se perde. Um 
 
 ### 💡 A Solução
 
-Uma arquitetura de **4 camadas em cascata**:
+Uma arquitetura de **3 camadas em cascata**:
 
 ```
 [Entrada: Perfil do Usuário]
@@ -47,12 +46,6 @@ Uma arquitetura de **4 camadas em cascata**:
  └────────┬────────┘
           │
           ▼
- ┌─────────────────┐
- │  Camada 4: cGAN │  → Meta-aprendizado por modo (conservador/equilibrado/
- │  (Meta-Learner) │     aventureiro) com threshold e exploração calibrados
- └─────────────────┘
-          │
-          ▼
   [API FastAPI + Cache Redis]
 ```
 
@@ -67,10 +60,13 @@ Uma arquitetura de **4 camadas em cascata**:
 > | 1 — RandomForest | ✅ sim | ❌ não — `passa_filtro_qualidade()` retorna `True` incondicionalmente |
 > | 2 — KMeans | ✅ sim | ❌ não — carregada, nunca consultada |
 > | 3 — TruncatedSVD | ✅ sim | ✅ **sim — é o que gera a recomendação** |
-> | 4 — cGAN | ✅ sim | ❌ não — os thresholds vêm de um dicionário fixo, não da rede |
 >
-> Ou seja: as quatro camadas existem como artefatos treinados, mas **a cascata não está
-> conectada**. Integrá-las é o próximo passo do projeto, não um recurso entregue.
+> As três camadas existem como artefatos treinados, mas **a cascata não está
+> conectada**: só a camada 3 gera recomendação. Os thresholds dos modos são
+> constantes em `recomendador.py`.
+>
+> Existiu uma **camada 4 (cGAN)** que ajustaria esses thresholds por usuário. Foi
+> removida do pipeline depois de medida — ver §3.5.
 
 ---
 
@@ -79,7 +75,9 @@ Uma arquitetura de **4 camadas em cascata**:
 - ✅ **Recomendações personalizadas** baseadas em perfil completo de usuário
 - ✅ **3 modos de recomendação**: Conservador (precisão), Equilibrado (padrão), Aventureiro (exploração)
 - ✅ **Cold start** para novos usuários — fallback pela média global dos embeddings de usuário
-- ✅ **API rápida** com latência < 15ms e cache Redis nas rotas analíticas (TTL 1h)
+- ✅ **API assíncrona** (FastAPI + asyncpg) com cache Redis nas rotas analíticas (TTL 1h)
+  — não há benchmark de latência no repositório; a marca de "< 15ms" citada antes
+  nunca foi medida por nenhum script aqui
 - ✅ **Pipeline completo de dados** com imputação inteligente validada (KS-test p = 1.0)
 - ⚠️ **MLOps**: MLflow instrumentado e funcionando; a busca com Optuna existe mas rodou sobre
   dados aleatórios (`optimization.py`), então não produziu hiperparâmetros aproveitáveis
@@ -114,96 +112,406 @@ de 05/03/2026 e mostra o efeito:
 
 A tabela publicada anteriormente era o segundo run.
 
-**Métricas de ranking honestas ainda não foram medidas.** Para medi-las é preciso:
-separar as sessões por tempo, manter as últimas fora do treino, e avaliar a saída
-real do `RecomendadorService` contra elas. Até lá, o projeto não faz alegação de
-Precision/Recall/NDCG.
+### Medição honesta (`scripts/experimentation/evaluate_ranker.py`)
 
-> A telemetria "online" (CTR, tempo de sessão, taxa de aceitação) também foi removida:
-> é amostrada de distribuições escolhidas a mão em `online_metrics.py`. Nenhum usuário
-> real interagiu com o sistema.
+Split temporal em três partes, por usuário e por tempo:
 
-### 3.2 Os 3 Modos de Recomendação
+```
+|<------- treino 70% ------->|<- validação 15% ->|<- teste 15% ->|
+                                                        tempo ->
+```
 
-O sistema expõe três arquétipos de recomendação que permitem ao usuário controlar o trade-off entre **precisão e descoberta**:
+Toda escolha de modelo e hiperparâmetro (capacidade, alpha, viés) é feita na
+**validação**. O **teste** é tocado uma vez, no fim, só para reportar.
 
-| Modo | Threshold | Exploração | Cobertura (100 users) | Score Médio | Perfil |
-|------|-----------|------------|----------------------|-------------|--------|
-| 🎯 **Conservador** | 0.7 | 10% | 0.54% | **3.34** | Máxima precisão — apenas os melhores candidatos |
-| ⚖️ **Equilibrado** | 0.5 | 20% | 0.56% | 3.14 | Balanceado — modo padrão para a maioria |
-| 🎲 **Aventureiro** | 0.3 | 30% | 0.57% | 2.84 | Exploração e descoberta de títulos inesperados |
+> **Correção de método.** As primeiras versões desta avaliação usavam só
+> treino/teste, e cerca de 12 configurações diferentes foram comparadas no mesmo
+> conjunto de teste. Isso é overfitting ao teste: cada decisão tomada olhando
+> aquele número vaza informação, e "o melhor no teste" passa a medir quanto se
+> garimpou, não desempenho fora da amostra. O split de três partes corrige isso.
 
-> 🔁 **Sobreposição entre Conservador e Aventureiro: apenas 4/10 jogos em comum** — diversificação real e mensurável.
+Todas as métricas vêm com **intervalo de confiança de 95% por bootstrap** sobre
+usuários, e as comparações principais usam **bootstrap pareado** — se o intervalo
+da diferença cruza zero, a comparação não sustenta conclusão.
 
-![Comparativo dos 3 Modos — Cobertura Linear](reports/figures/coverage_linear.png)
+> Os dados originais não existem mais (o projeto Supabase foi pausado por
+> inatividade, e o gerador nunca teve seed — então nunca foram reproduzíveis).
+> O dataset agora é gerado localmente e de forma determinística por
+> `src/data_preparation/generate_synthetic_data.py`.
 
-### 3.3 Análise de Cobertura e Escalabilidade
+#### O gerador antigo não continha sinal colaborativo
 
-A cobertura segue uma **Lei de Potência** com R² = 0.9474, comprovando que o baixo percentual atual é uma característica do volume de dados sintéticos — e não um defeito do modelo.
+Rodando a avaliação sobre dados no formato original (favoritos sorteados
+uniformemente do catálogo, independentes por usuário — `populate_supabase_v2.py:119`):
 
-**Dados empíricos (10.000 usuários sintéticos do ranker, seed=42):**
+| Modelo | P@10 | NDCG@10 |
+|---|---|---|
+| SVD (camada 3) | 0.0149 | 0.0185 |
+| **SVD sem itens já vistos** | **0.0000** | **0.0000** |
+| Baseline: popularidade | 0.0004 | 0.0007 |
 
-| Usuários | Jogos Únicos | Cobertura |
-|----------|-------------|-----------|
-| 100 | 633 | 0.52% |
-| 500 | 1.565 | 1.28% |
-| 1.000 | 2.148 | 1.75% |
-| 2.000 | 2.733 | 2.23% |
-| 5.000 | 3.300 | 2.69% |
-| **10.000** | **3.768** | **3.08%** |
+Removendo os jogos que o usuário já jogou, a precisão ia a **zero exato**: todo o
+acerto era re-recomendar o próprio histórico. O diagnóstico explicava — 99.9% dos
+pares de usuários não compartilhavam nenhum jogo, e o top-1% dos títulos
+concentrava só 4.7% das interações. Filtragem colaborativa é achar usuários
+parecidos; não havia nenhum para achar.
 
-**Regressão log-log — parâmetros do modelo de potência:**
+#### Com o gerador corrigido
 
-| Parâmetro | Valor | Interpretação |
-|-----------|-------|---------------|
-| **Expoente (a)** | `0.3673` | Cada 10× usuários → cobertura +2.3× |
-| **Intercepto (b)** | `-2.1099` | Escala base do modelo |
-| **R²** | `0.9474` | Modelo explica **94.7%** da variação |
-| **Equação** | `cob = exp(-2.1099) × n^0.3673` | Lei de potência sublinear (Long-Tail) |
+O novo gerador dá gêneros aos jogos, afinidade por gênero aos usuários (Dirichlet
+esparsa) e popularidade em lei de potência. Aí sim existe estrutura a descobrir:
 
-**Projeções com IC 95%:**
+| Medida | Gerador antigo | Gerador novo |
+|---|---|---|
+| Jogos em comum entre 2 usuários | 0.001 | **0.227** |
+| Pares com alguma sobreposição | 0.1% | **17.6%** |
+| Top-1% dos jogos / interações | 4.7% | **52.9%** (Steam real: 60–80%) |
 
-| Usuários | Cobertura Central | IC 95% |
-|----------|-------------------|--------|
-| 100.000 | 8.3% | [6.4%, 10.9%] |
-| **500.000** | **15.0% ← meta** | [11.5%, 19.7%] |
-| 1.000.000 | 19.4% | [14.8%, 25.4%] |
-| 2.000.000 | 25.0% | [19.1%, 32.7%] |
-| 5.000.000 | 35.0% | [26.8%, 45.8%] |
+| Modelo | P@10 | R@10 | NDCG@10 |
+|---|---|---|---|
+| **SVD (camada 3)** | **0.1371** | 0.3770 | 0.4009 |
+| Baseline: popularidade | 0.0655 | 0.2031 | 0.1500 |
+| SVD sem itens já vistos | 0.0069 | 0.0193 | 0.0155 |
+| **Popularidade sem itens vistos** | **0.0116** | 0.0439 | 0.0305 |
+| Baseline: aleatório | 0.0001 | 0.0000 | 0.0001 |
 
-> 📈 **Conclusão:** Com ~497.364 usuários reais, o sistema atinge 15% de cobertura — nível comparável a grandes plataformas de recomendação.
+**Leitura honesta das duas metades:**
 
-![Escala Log-Log — Lei de Potência Confirmada](reports/figures/coverage_loglog.png)
-![Projeção com Intervalo de Confiança 95%](reports/figures/coverage_projection_with_ci.png)
+- Na tarefa completa, o SVD bate popularidade por **2.1×** — a camada colaborativa
+  agrega valor real sobre "recomende o mais jogado".
+- Na tarefa de **descoberta** (só itens que o usuário nunca tocou), **a popularidade
+  vence o SVD** (0.0116 contra 0.0069). O ganho da camada 3 vem majoritariamente de
+  reordenar o que a pessoa já conhece, não de revelar coisa nova.
+
+Ou seja: o modelo aprende, mas ainda **não justifica sua complexidade para
+descoberta**. Esse é o problema em aberto do projeto, e agora ele tem um número.
+
+> Pendente relacionado: com a escala corrigida, os thresholds fixos (0.3/0.5/0.7)
+> ficam mal calibrados — o modo conservador deixa passar só ~2 itens e cai no
+> fallback de relaxamento. Thresholds por **percentil** do score do usuário
+> resolveriam, em vez de constantes absolutas.
+
+#### Overfitting: capacidade do modelo vs. generalização
+
+O ranker tem 122.507 itens × 50 fatores ≈ **6,6 milhões de parâmetros contra
+246 mil interações de treino — 27× mais parâmetros que dados**. Além disso, 41%
+dos jogos aparecem em exatamente uma interação, então o vetor latente desses
+itens é ajustado a uma única observação.
+
+Varredura de capacidade, medida na validação:
+
+| `n_factors` | P@10 tarefa completa | P@10 descoberta |
+|---|---|---|
+| 8 | 0.0691 | 0.0072 |
+| **16** | 0.0879 | **0.0075** ← melhor para descoberta |
+| 32 | 0.0998 | 0.0065 |
+| 50 *(config do projeto)* | 0.1081 | 0.0048 |
+| 100 | **0.1217** ← melhor para a tarefa completa | 0.0017 |
+
+**As duas tarefas apontam em direções opostas.** Mais capacidade melhora
+monotonicamente a tarefa completa e destrói a descoberta — de 0.0075 em k=16 para
+0.0017 em k=100, uma queda de 77%. É a assinatura clássica de overfitting: a
+capacidade extra é gasta decorando pares usuário-item do treino, o que ajuda a
+reordenar o que já se conhece e atrapalha a generalizar para item novo.
+
+O `n_components=50` que o projeto usa **já está muito além do ótimo para
+descoberta**. Só reduzir para 16 melhora a descoberta em 56% (0.0048 → 0.0075).
+
+> Isso qualifica a conclusão anterior: parte da derrota do SVD para a popularidade
+> na descoberta era overfitting, não limitação do método. Mesmo em k=16 a
+> popularidade ainda ganha (0.0075 contra 0.0091 na validação), mas a distância é
+> bem menor do que a medida em k=50.
+
+#### Capacidade de cada camada vs. estatística dos dados
+
+A varredura acima levanta a pergunta para as outras camadas: a capacidade está
+calibrada pelo que os dados sustentam, ou por hábito? (A camada 4 aparece em §3.5,
+porque a conclusão dela foi removê-la.)
+
+| Camada | Capacidade | Dados disponíveis | Veredito |
+|---|---|---|---|
+| 1 — RandomForest | 25 features, `max_depth=10`, 100 árvores → ~120 amostras por folha se saturada | 122.507 jogos, classes 31/69 | **Adequada.** Única camada bem dimensionada. |
+| 2 — KMeans + PCA | `PCA(n_components=0.95)` retém **21 de 26** colunas | 10.000 usuários; usuário médio toca **4,4 de 22 gêneros** | **Exigente demais.** |
+| 3 — SVD | `n_components=50` → 6,6M parâmetros | 246k interações (**27×**) | **Exigente demais.** Ótimo em k=16. |
+
+**Camada 2.** `PCA(n_components=0.95)` praticamente não reduz nada: guarda 21 de 26
+dimensões. Como a matriz de gênero é esparsa e composicional (cada usuário toca 4,4
+de 22 gêneros, o resto é zero), padronizar e reter 95% da variância preserva
+direções que são ruído. Pior, o `silhouette_score` é calculado nesse espaço de 21
+dimensões, onde distâncias se concentram e a métrica perde poder discriminativo —
+o que torna qualquer silhouette alto reportado nessa configuração pouco confiável.
+Fixar poucos componentes (5–8) ou agrupar direto no perfil de gênero seria mais
+honesto com a estatística dos dados.
+
+**Camada 2 — medida, não inferida** (`scripts/experimentation/evaluate_clustering.py`).
+Varrendo a dimensionalidade do PCA e escolhendo `k` por silhouette, como o projeto
+faz, e então medindo o que a camada deveria entregar — recomendação por
+"gente parecida com você joga isto", na tarefa de descoberta:
+
+| PCA dims | k | silhouette | P@10 descoberta | IC 95% |
+|---|---|---|---|---|
+| 2 | 3 | **0.4873** | 0.0085 | [0.0074, 0.0097] |
+| 3 | 4 | 0.3535 | 0.0084 | [0.0072, 0.0096] |
+| 5 | 6 | 0.2397 | 0.0087 | [0.0076, 0.0099] |
+| 8 | 10 | 0.2227 | 0.0087 | [0.0076, 0.0099] |
+| **13** | 10 | 0.1817 | **0.0092** | [0.0080, 0.0105] |
+| 21 *(config do projeto)* | 10 | **0.1594** | 0.0089 | [0.0077, 0.0100] |
+| *popularidade global* | — | — | *0.0091* | — |
+
+Dois resultados, os dois contra a intuição:
+
+**1. Silhouette e qualidade de recomendação são anticorrelacionados aqui.** O
+silhouette cai monotonicamente com a dimensão (0.4873 → 0.1594), enquanto a
+precisão fica plana e tem o pico justamente na faixa de pior silhouette. Ou seja,
+**escolher `k` maximizando silhouette — o que `train_layer2_clustering.py` faz —
+otimiza contra o objetivo real.** Silhouette mede coesão geométrica, não utilidade.
+
+**2. Reduzir features não faz a camada recomendar melhor.** A resposta honesta para
+"onde ela precisa de menos features" é: em lugar nenhum. A dimensionalidade não é
+o gargalo — nenhuma configuração bate a popularidade global. A melhor delas fica
++0.0001 acima, com IC de [−0.0009, +0.0011] no bootstrap pareado: **não
+significativa**.
+
+A razão é estrutural: com popularidade de cauda pesada, a popularidade *dentro* de
+um cluster é dominada pelos mesmos títulos de cabeça da popularidade global. O
+agrupamento por afinidade de gênero não é discriminativo o bastante para mudar o
+topo da lista.
+
+> Consequência para o pipeline: ligar a camada 2 à inferência, do jeito que o
+> README original descrevia ("fallback por cluster de arquétipo"), não melhoraria
+> a recomendação. O PCA continua mal calibrado, mas corrigi-lo não resolve —
+> resolve outra coisa.
+
+#### Tentativa de corrigir a descoberta: despopularização (não funcionou)
+
+A hipótese padrão para "o ranker perde para popularidade na descoberta" é viés de
+popularidade: o modelo empurraria itens populares demais. O ajuste clássico é
+penalizar o score pela popularidade do item. Testado com
+
+```
+score' = minmax(score) - alpha * minmax(log1p(popularidade))
+```
+
+Rodado sobre o modelo k=16 escolhido na validação, não sobre o k=50 sobreajustado:
+
+| alpha | P@10 | NDCG@10 | vs. baseline popularidade |
+|---|---|---|---|
+| **0.0** | **0.0075** | 0.0216 | 0.82× |
+| 0.1 | 0.0053 | 0.0178 | 0.59× |
+| 0.3 | 0.0022 | 0.0114 | 0.24× |
+| 0.5 | 0.0013 | 0.0082 | 0.14× |
+| 1.0 | 0.0001 | 0.0010 | 0.01× |
+
+**Piora monotonicamente. O melhor alpha é zero** — ou seja, nenhuma penalização.
+
+A hipótese estava errada: o SVD não está falhando por viés de popularidade. Neste
+dataset a popularidade é **genuinamente preditiva** (os favoritos são sorteados
+∝ afinidade_de_gênero × popularidade), então penalizá-la joga fora sinal real. É
+por isso que a baseline de popularidade é difícil de bater na descoberta.
+
+O problema real é outro: o `TruncatedSVD` otimiza **reconstrução** da matriz de
+interações (erro quadrático), não **ranqueamento**. Para feedback implícito, o que
+se usa são perdas de ranking par-a-par — BPR ou WARP.
+
+> 🎯 Ironia útil: **LightFM**, a biblioteca que o README alegava usar e que o código
+> nunca importou, implementa exatamente WARP, e é a ferramenta indicada para este
+> problema.
+
+#### Segunda tentativa: BPR em vez de SVD (também não funcionou)
+
+`scripts/experimentation/bpr.py` implementa BPR-MF (Rendle et al., 2009), que
+otimiza ranqueamento par-a-par em vez de reconstrução. Hiperparâmetros: 50
+fatores (mesma capacidade do SVD, para isolar o efeito da perda), lr 0.05,
+30 épocas, L2 0.01, 1 negativo por positivo.
+
+Medido na validação, em k=50 e k=16:
+
+| Modelo | P@10 completo | P@10 descoberta |
+|---|---|---|
+| SVD k=50 | 0.1081 | 0.0048 |
+| **SVD k=16** | 0.0879 | **0.0075** |
+| BPR k=50, sem viés | 0.0710 | 0.0060 |
+| BPR k=16, sem viés | 0.0400 | 0.0045 |
+| BPR k=16, com viés | 0.0246 | 0.0021 |
+| Baseline: popularidade | — | **0.0091** |
+
+BPR **piora** ao reduzir a capacidade, direção oposta à do SVD, e a perda ainda
+cai na época 30 (0.0394). BPR está **subajustado**, não sobreajustado: precisa de
+mais épocas ou negativos mais difíceis, não de menos fatores.
+
+BPR perdeu para o SVD nas duas tarefas. A causa aparece na curva de perda, que cai
+até **0.0397** — perda BPR perto de zero significa que o modelo separa positivo de
+negativo aleatório quase sempre. Com densidade de 0.02%, um negativo sorteado
+uniformemente é trivialmente fácil. O modelo aprendeu "jogo que eu joguei" contra
+"jogo qualquer", que é uma tarefa fácil e inútil para ordenar candidatos plausíveis.
+
+É a fraqueza conhecida do BPR com amostragem uniforme, e é exatamente o que **WARP**
+corrige: reamostra até encontrar um negativo que viola o ranking, treinando em
+negativos difíceis.
+
+#### Terceira tentativa: WARP (também não funcionou)
+
+`scripts/experimentation/warp.py` implementa WARP (Weston et al., 2011): reamostra
+negativos até violar a margem, estima o rank pelo número de tentativas e pondera a
+atualização por `Phi(rank)`. É a perda que o LightFM implementa.
+
+O treino é saudável — violações caem de 55,8% para 37,7% e as tentativas até achar
+um violador sobem de 10,8 para 16,0 ao longo das épocas, que é o sinal de que a
+ordenação está melhorando:
+
+| Modelo | P@10 completo | P@10 descoberta | IC 95% |
+|---|---|---|---|
+| *Baseline: popularidade* | — | **0.0091** | [0.0079, 0.0103] |
+| SVD k=16 | 0.0879 | 0.0075 | [0.0063, 0.0088] |
+| WARP k=50 | 0.0524 | 0.0030 | [0.0022, 0.0038] |
+| WARP k=16 | 0.0242 | 0.0018 | [0.0012, 0.0024] |
+
+WARP perde para o SVD (−0.0045) e para a popularidade (−0.0061), as duas
+significativas no bootstrap pareado. **A hipótese estava errada.** Trocar a perda de
+reconstrução por perda de ranqueamento não resolve a descoberta aqui.
+
+> Nota de implementação: a primeira versão divergiu — `Phi(rank)` chega a ~12 com
+> 122k itens e, sem limitar a norma dos embeddings, o produto escalar estourava e
+> as violações viravam `NaN` (detectável pela taxa despencando para ~1%). Corrigido
+> com projeção na bola de raio `max_norm` após cada atualização, e margem calibrada
+> para a faixa de score resultante. Os números acima são do treino saudável.
+
+#### O que quatro tentativas dizem
+
+| Tentativa | P@10 descoberta |
+|---|---|
+| *Baseline: popularidade* | **0.0091** |
+| SVD k=16 | 0.0075 |
+| Despopularização (melhor alpha = 0) | 0.0075 |
+| BPR k=50 | 0.0060 |
+| WARP k=50 | 0.0030 |
+
+Nenhuma bate a popularidade. O padrão é consistente o bastante para tirar uma
+conclusão: **nesta base, sinal colaborativo não generaliza para itens não vistos,
+independentemente da função de perda.** Com 0,02% de densidade e 41% dos jogos
+aparecendo uma única vez, não há coocorrência suficiente para inferir afinidade.
+
+O único caminho não testado é **conteúdo** — usar as features do jogo diretamente.
+E, como registrado acima, testá-lo neste dataset seria circular: o gerador sorteia
+favoritos ∝ afinidade_de_gênero × popularidade, então mediria a premissa que
+escrevemos, não o método. Essa pergunta só se responde com interação real.
+
+#### Onde isso deixa o projeto
+
+Três tentativas, nenhuma bate a popularidade na descoberta: SVD (0.0069),
+despopularização (piora), BPR (0.0060) contra popularidade (0.0116).
+
+Isso aponta para o que **não** foi tentado: sinal de **conteúdo**. As camadas 1
+(RandomForest sobre features de jogo) e 2 (KMeans sobre perfil de gênero) existem
+treinadas e nunca foram ligadas à inferência. Para um item que ninguém no cluster
+do usuário jogou, conteúdo é a única fonte de sinal — nenhum método colaborativo
+tem o que usar.
+
+> ⚠️ Ressalva honesta: o gerador sintético sorteia favoritos ∝ afinidade_de_gênero ×
+> popularidade. Ou seja, **o próprio gerador determina que features de conteúdo
+> funcionariam bem aqui** — testar isso neste dataset seria medir a premissa do
+> gerador, não a qualidade do método. A conclusão só vale de verdade sobre dados
+> reais de interação.
 
 ---
 
-### 3.4 Camada 4 — cGAN (meta-learner de threshold)
+### 3.5 Camada 4 (cGAN) — removida do pipeline
 
-**O que é real:** há uma GAN condicional de verdade em `scripts/meta_learning/`.
-Generator e Discriminator condicionados num vetor de 147 features de comportamento,
-loss adversarial `BCEWithLogitsLoss`, TTUR (lr_D 4e-4 > lr_G 1e-4), `n_critic`,
-gradient clipping e um termo L1 auxiliar. O treino aconteceu de fato: os
-checkpoints em `models/` carregam `num_batches_tracked = 40.500`, consistente com
-as 500 épocas da curva de loss (`reports/figures/training_curves.png`).
+A camada 4 ajustaria por usuário o threshold dos modos, com uma GAN condicional.
+Foi **removida da arquitetura** depois de medida. O código continua em
+`scripts/meta_learning/` como experimento encerrado e documentado, não como etapa
+do pipeline.
 
-**O que não funcionou:** o gerador sofreu **mode collapse**. Como mostra
-`reports/figures/18_cgan_threshold_dist.png`, praticamente toda saída colapsa em
-~0.30, independentemente do usuário condicionado — em `19_cgan_final_reality_check.png`
-a linha do perfil "Veterano/HC" é horizontal. A loss do discriminador fica presa em
-~0.65 (≈ ln 2, ou seja, no acaso) durante as 500 épocas: o componente adversarial
-não contribuiu, e o que restou foi um regressor L1 que aprendeu a moda do alvo.
+O que a medição mostrou, em ordem de importância:
 
-**Sobre o "MAE 0.0156 vs 0.2011":** os alvos (`best_threshold`) também se concentram
-em 0.3, então um modelo que sempre responde 0.30 erra ~0.018. A "baseline estática"
-é a constante **0.5**, cujo erro é |0.5 − 0.3| = 0.20 — daí o 0.2011. Uma baseline
-trivial do tipo "responda a mediana do alvo" empataria com a cGAN. **O ganho de ~13×
-é artefato da constante escolhida, não evidência de aprendizado.** (As duas figuras
-ainda divergem entre si: `19_...png` traz 0.0182 no título e 0.0156 na legenda.)
+**1. O threshold não muda a recomendação.** Este é o argumento decisivo, e é
+independente da qualidade da rede. O threshold só restringe o *pool* de candidatos;
+a lista final sai sempre ordenada por score, então o top-k é praticamente o mesmo
+em qualquer modo (sobreposição medida de 9,2 em 10 antes da correção de escala).
+**Mesmo um preditor de threshold perfeito não melhoraria a saída.** A camada
+otimizava um parâmetro que não afeta o resultado.
 
-Além disso, a cGAN treinada **não é carregada em lugar nenhum** — não há
-`load_state_dict` no repositório. Os thresholds usados em produção vêm do dicionário
-fixo em `recomendador.py`.
+**2. Nenhum tamanho de rede bate a baseline trivial.**
+
+| Configuração | Parâmetros | MAE | std das predições | corr com alvo |
+|---|---|---|---|---|
+| Original (latent 32, hidden 128, 3 camadas) | 41.473 | 0.0658 | 0.0469 | 0.256 |
+| Pequena (latent 4, hidden 16, 2 camadas) | **849** | 0.0721 | 0.0963 | 0.246 |
+| *Baseline: sempre a moda (0.3)* | 0 | **0.0653** | — | — |
+| *Baseline: sempre 0.5 — a que o projeto usava* | 0 | 0.1708 | — | — |
+
+A cGAN original perde para um `return 0.3`. Encolher para 849 parâmetros piora.
+
+**3. O ganho publicado era a escolha da baseline.** Contra a constante 0.5 a rede
+parece 2,6× melhor. Mas 0.5 é um palpite ruim: o alvo tem **72% da massa em 0.3** e
+só **1,45 bits** de entropia. Contra a moda, não há ganho.
+
+**4. Havia sinal condicional fraco e real** — correlação de ~0,25 com o alvo, nas
+duas configurações. As features dizem *algo* sobre o threshold ideal. Só não o
+bastante para vencer a moda numa métrica que premia prever a moda.
+
+Reproduzir: `python scripts/experimentation/evaluate_cgan.py`
+
+<details>
+<summary>Medições de suporte (distribuição do alvo e capacidade)</summary>
+
+Medindo o alvo real (`best_threshold`, reproduzindo
+`compute_best_thresholds` sobre o ranker k=16):
+
+| `best_threshold` | massa |
+|---|---|
+| **0.3** | **72,1%** |
+| 0.4 | 9,8% |
+| 0.5 | 7,7% |
+| 0.6 | 3,4% |
+| 0.7 | 4,4% |
+| 0.8 | 2,6% |
+
+Entropia do alvo: **1,45 bits** (máximo possível com 6 valores: 2,59). São **57 mil
+parâmetros para aprender 1,45 bits.** Com essa folga e a perda L1 pesando 5×, o
+mínimo mais fácil de alcançar é emitir a moda constante — que é exatamente o mode
+collapse observado em `reports/figures/18_cgan_threshold_dist.png`.
+
+E a baseline fica em perspectiva:
+
+| Estratégia | MAE |
+|---|---|
+| Sempre prever a moda (0.3) | **0,0659** |
+| Sempre prever 0.5 — *a "baseline estática" do projeto* | 0,1741 |
+
+A baseline escolhida é **2,6× pior que o palpite trivial**. Comparar a cGAN contra
+ela infla o ganho; contra a moda, o espaço de melhora é muito menor.
+
+**Camada 4 — testada** (`scripts/experimentation/evaluate_cgan.py`). Split por
+usuário 80/20, condição de 26 features, alvo do ranker k=16, receita de treino
+idêntica à de `train_cgan.py` (BCE adversarial + L1 com peso 5, TTUR, `n_critic=2`):
+
+| Configuração | Parâmetros | MAE | std das predições | corr com alvo |
+|---|---|---|---|---|
+| Original (latent 32, hidden 128, 3 camadas) | 41.473 | 0.0658 | 0.0469 | 0.256 |
+| Pequena (latent 4, hidden 16, 2 camadas) | **849** | 0.0721 | 0.0963 | 0.246 |
+| *Baseline: sempre a moda (0.3)* | 0 | **0.0653** | — | — |
+| *Baseline: sempre 0.5 — a do projeto* | 0 | 0.1708 | — | — |
+
+Três leituras:
+
+1. **Nenhum modelo bate a moda.** A cGAN original fica em 0.0658 contra 0.0653 de
+   um `return 0.3`. Encolher para 849 parâmetros piora (0.0721). O mode collapse
+   não era só excesso de capacidade.
+2. **Contra a baseline do projeto, as duas parecem ótimas** (0.0658 vs 0.1708, um
+   "ganho" de 2,6×). Todo o ganho publicado vinha da escolha da baseline.
+3. **Existe sinal condicional fraco mas real**: correlação de ~0,25 com o alvo nas
+   duas configurações. As features dizem *algo* sobre o threshold ideal — só não o
+   bastante para vencer a moda numa métrica que premia prever a moda, já que 72%
+   da massa está num único valor.
+
+> **O problema mais fundo:** o threshold só importa se mudar a recomendação. A
+> medição da seção anterior mostrou que ele **não muda o top-k** — só restringe o
+> pool de candidatos, e a lista final sai sempre ordenada por score. Ou seja,
+> mesmo um preditor de threshold perfeito não melhoraria a recomendação. A camada 4
+> otimiza um parâmetro que não afeta a saída.
+
+</details>
 
 ---
 
@@ -230,7 +538,6 @@ e um experimento controlado. Este ainda roda sobre 10.000 usuários sintéticos.
 |------------|---------------|
 | **TruncatedSVD** (scikit-learn) | Ranking colaborativo — camada 3 |
 | **Scikit-learn** | RandomForest (camada 1), KMeans (camada 2), TruncatedSVD (camada 3) |
-| **PyTorch** | cGAN meta-learner (camada 4) |
 | **Optuna** | Otimização Bayesiana (20 trials por modelo) |
 | **MLflow** | Versionamento de experimentos e artefatos |
 | **SciPy** | Testes estatísticos (KS-test, regressão log-log) |
@@ -249,7 +556,6 @@ e um experimento controlado. Este ainda roda sobre 10.000 usuários sintéticos.
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.0-EE4C2C?logo=pytorch&logoColor=white)
 ![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3-F7931E?logo=scikit-learn&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?logo=redis&logoColor=white)
@@ -352,12 +658,18 @@ killswitch-engage/
 └── README.md                   # Este arquivo
 ```
 
-> ⚠️ **`src/models/` não está neste repositório.** A regra `models/` do `.gitignore`
-> (pensada para artefatos `.pkl`) casava também com `src/models/` e impediu que o
-> código dos treinadores fosse versionado. A regra foi corrigida para `/models/`,
-> mas os arquivos precisam ser adicionados de volta pelo autor. Enquanto isso,
-> `tests/test_models/test_rf_trainer.py` não coleta — ele importa
-> `src.models.classifier.rf_trainer`, que não existe aqui.
+> ⚠️ **`src/models/` foi perdido.** A regra `models/` do `.gitignore` (pensada para
+> artefatos `.pkl`) casava também com `src/models/`, então o código dos treinadores
+> nunca chegou a ser versionado — não está em commit nenhum do histórico. A cópia
+> local do autor também se perdeu. A regra foi corrigida para `/models/`, de modo
+> que o diretório volta a ser versionável se for reescrito.
+>
+> `tests/test_models/` foi removido junto: testava `RandomForestTrainer`, uma classe
+> que não existe mais em lugar algum. Os testes continuam no histórico do git, caso
+> sirvam de referência para reescrever a classe.
+>
+> O treino da camada 1 segue funcional por `scripts/train_layer1_classifier.py`, que
+> é independente de `src/models/`.
 
 ---
 
@@ -399,8 +711,6 @@ mlflow ui --backend-store-uri sqlite:///scripts/experimentation/mlflow.db
 3. Commit suas mudanças (`git commit -m 'feat: adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
-
-Leia o arquivo `CONTRIBUTING.md` para mais detalhes sobre o processo de contribuição e padrões de código.
 
 ---
 
