@@ -116,18 +116,37 @@ def gerar_sessoes(rng: np.random.Generator) -> pd.DataFrame:
 # ── Split temporal ───────────────────────────────────────────────────────────
 
 
-def split_temporal(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[int, set]]:
-    """Segura as últimas HOLDOUT_FRAC sessões de cada usuário como verdade."""
+def split_temporal(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[int, set], dict[int, set]]:
+    """Divide as sessões de cada usuário em treino / validação / teste, por tempo.
+
+    POR QUE TRÊS PARTES E NÃO DUAS
+    ------------------------------
+    Comparar vários modelos sempre no mesmo conjunto de teste é uma forma de
+    overfitting: cada decisão tomada olhando aquele número (qual alpha, quantos
+    fatores, ligar ou não o viés) vaza informação do teste para o modelo. Depois
+    de ~12 avaliações, "o melhor no teste" já não estima desempenho fora da
+    amostra — estima o quanto se garimpou.
+
+    Aqui toda escolha de modelo e hiperparâmetro usa VALIDAÇÃO. O teste é tocado
+    uma vez, no fim, só para reportar.
+
+        |<---------- treino 70% ---------->|<- val 15% ->|<- teste 15% ->|
+                                                    tempo ->
+    """
     df = df.sort_values(["usuario_id", "t"], kind="stable")
     n_por_user = df.groupby("usuario_id")["t"].transform("size")
     posicao = df.groupby("usuario_id").cumcount()
-    corte = (n_por_user * (1 - HOLDOUT_FRAC)).astype(int).clip(lower=1)
 
-    treino = df[posicao < corte]
-    teste = df[posicao >= corte]
+    corte_treino = (n_por_user * 0.70).astype(int).clip(lower=1)
+    corte_val = (n_por_user * 0.85).astype(int).clip(lower=2)
 
-    verdade = teste.groupby("usuario_id")["jogo_id"].apply(set).to_dict()
-    return treino, verdade
+    treino = df[posicao < corte_treino]
+    validacao = df[(posicao >= corte_treino) & (posicao < corte_val)]
+    teste = df[posicao >= corte_val]
+
+    verdade_val = validacao.groupby("usuario_id")["jogo_id"].apply(set).to_dict()
+    verdade_teste = teste.groupby("usuario_id")["jogo_id"].apply(set).to_dict()
+    return treino, verdade_val, verdade_teste
 
 
 # ── Métricas ─────────────────────────────────────────────────────────────────
@@ -137,6 +156,33 @@ def ndcg_at_k(recomendados: np.ndarray, relevantes: set, k: int) -> float:
     dcg = sum(1.0 / np.log2(i + 2) for i, g in enumerate(recomendados[:k]) if g in relevantes)
     idcg = sum(1.0 / np.log2(i + 2) for i in range(min(len(relevantes), k)))
     return dcg / idcg if idcg > 0 else 0.0
+
+
+def varrer_n_factors(X, users, verdade_val, n_games, vistos, fatores=(8, 16, 32, 50, 100)) -> None:
+    """Mede overfitting do ranker variando a capacidade. Roda em VALIDAÇÃO.
+
+    Com 122.507 itens x 50 fatores o modelo tem ~6,6M de parâmetros contra 246k
+    interações de treino — 27x mais parâmetros que dados. Além disso 41% dos jogos
+    aparecem em exatamente uma interação, então o vetor latente desses itens é
+    ajustado a uma única observação.
+
+    Se a métrica de validação subir ao REDUZIR a capacidade, o modelo maior estava
+    decorando em vez de generalizar.
+    """
+    print("\n\nCAPACIDADE vs GENERALIZAÇÃO (validação)")
+    print("Se menos fatores vencem, o modelo grande está decorando.\n")
+    print(f"{'n_factors':>10} {'P@10 completo':>15} {'P@10 descoberta':>17}")
+    print("-" * 46)
+
+    for k in fatores:
+        svd = TruncatedSVD(n_components=k, random_state=SEED)
+        Uk = svd.fit_transform(X)
+        Vk = svd.components_.T
+        completo = avaliar(f"k={k}", lambda u: Vk @ Uk[u], users, verdade_val, n_games)
+        desc = avaliar(
+            f"k={k}d", lambda u: Vk @ Uk[u], users, verdade_val, n_games, vistos=vistos
+        )
+        print(f"{k:>10} {completo.precision:>15.4f} {desc.precision:>17.4f}")
 
 
 def varrer_despopularizacao(U, V, popularidade, users, verdade, n_games, vistos) -> None:
@@ -229,12 +275,37 @@ class Resultado:
     recall: float
     ndcg: float
     cobertura: float
+    # Precisão por usuário. Necessária para intervalo de confiança: sem ela só
+    # existe a média, e média sem dispersão não diz se uma diferença é real.
+    por_usuario: np.ndarray | None = None
+
+
+def ic_bootstrap(valores: np.ndarray, n_reamostras: int = 2_000, seed: int = 0) -> tuple[float, float]:
+    """Intervalo de confiança de 95% da média, por bootstrap sobre usuários."""
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(valores), size=(n_reamostras, len(valores)))
+    medias = valores[idx].mean(axis=1)
+    return float(np.percentile(medias, 2.5)), float(np.percentile(medias, 97.5))
+
+
+def comparar_pareado(a: Resultado, b: Resultado, n_reamostras: int = 2_000, seed: int = 0) -> tuple[float, float, float]:
+    """Bootstrap pareado da diferença a - b. Pareado porque são os MESMOS usuários.
+
+    Returns:
+        (diferenca_media, limite_inferior, limite_superior) do IC de 95%.
+    """
+    d = a.por_usuario - b.por_usuario
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(d), size=(n_reamostras, len(d)))
+    medias = d[idx].mean(axis=1)
+    return float(d.mean()), float(np.percentile(medias, 2.5)), float(np.percentile(medias, 97.5))
 
 
 def avaliar(nome, scorer, users, verdade, n_games, vistos=None) -> Resultado:
     """`scorer(uid) -> vetor de scores por item`. `vistos` remove itens do treino."""
     p = r = n = 0.0
     recomendados_unicos = set()
+    p_por_usuario = []
 
     for uid in users:
         scores = scorer(uid)
@@ -248,12 +319,16 @@ def avaliar(nome, scorer, users, verdade, n_games, vistos=None) -> Resultado:
         rel = verdade[uid]
         hits = sum(1 for g in top if g in rel)
         p += hits / K
+        p_por_usuario.append(hits / K)
         r += hits / len(rel) if rel else 0.0
         n += ndcg_at_k(top, rel, K)
         recomendados_unicos.update(top.tolist())
 
     m = len(users)
-    return Resultado(nome, p / m, r / m, n / m, len(recomendados_unicos) / n_games)
+    return Resultado(
+        nome, p / m, r / m, n / m, len(recomendados_unicos) / n_games,
+        np.asarray(p_por_usuario),
+    )
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -281,8 +356,11 @@ def main() -> None:
 
     print(f"  sessões: {len(df):,} | usuários: {df.usuario_id.nunique():,} | jogos: {n_games:,}")
 
-    treino, verdade = split_temporal(df)
-    print(f"  treino: {len(treino):,} | holdout: {len(df) - len(treino):,}\n")
+    treino, verdade_val, verdade = split_temporal(df)
+    print(
+        f"  treino: {len(treino):,} | validação: {sum(len(v) for v in verdade_val.values()):,}"
+        f" | teste: {sum(len(v) for v in verdade.values()):,}\n"
+    )
 
     # Matriz de interações — mesma ponderação do train_layer3_ranker.py
     linhas = treino.usuario_id.values
@@ -303,7 +381,7 @@ def main() -> None:
     popularidade = np.asarray(Xb.sum(axis=0)).ravel()
 
     # Usuários avaliados: precisam ter holdout
-    elegiveis = np.array(sorted(verdade.keys()))
+    elegiveis = np.array(sorted(set(verdade) & set(verdade_val)))
     users = rng.choice(elegiveis, size=min(EVAL_SAMPLE, len(elegiveis)), replace=False)
 
     vistos = treino.groupby("usuario_id")["jogo_id"].apply(set).to_dict()
@@ -334,13 +412,30 @@ def main() -> None:
         ),
     ]
 
-    print(f"{'Modelo':<28} {'P@10':>8} {'R@10':>8} {'NDCG@10':>9} {'Cobertura':>11}")
-    print("-" * 68)
+    print("CONJUNTO DE TESTE — tocado uma vez, só para reportar\n")
+    print(f"{'Modelo':<30} {'P@10':>8} {'IC 95%':>18} {'NDCG@10':>9}")
+    print("-" * 70)
     for res in resultados:
+        lo, hi = ic_bootstrap(res.por_usuario)
         print(
-            f"{res.nome:<28} {res.precision:>8.4f} {res.recall:>8.4f} "
-            f"{res.ndcg:>9.4f} {res.cobertura:>10.2%}"
+            f"{res.nome:<30} {res.precision:>8.4f} "
+            f"  [{lo:.4f}, {hi:.4f}] {res.ndcg:>9.4f}"
         )
+
+    # As diferenças importam mais que os valores. Bootstrap pareado: se o IC da
+    # diferença cruza zero, a comparação não sustenta conclusão.
+    print("\nDiferenças pareadas (mesmos usuários), IC 95% da diferença:")
+    por_nome = {r.nome: r for r in resultados}
+    pares = [
+        ("SVD (camada 3)", "Baseline: popularidade"),
+        ("SVD sem itens já vistos", "Popularidade sem itens vistos"),
+    ]
+    for a, b in pares:
+        if a in por_nome and b in por_nome:
+            d, lo, hi = comparar_pareado(por_nome[a], por_nome[b])
+            sig = "significativa" if (lo > 0 or hi < 0) else "NÃO significativa"
+            print(f"  {a} - {b}")
+            print(f"    diferença {d:+.4f}  IC [{lo:+.4f}, {hi:+.4f}]  -> {sig}")
 
     # ── Efeito da correção de escala do threshold ────────────────────────────
     print("\n\nEFEITO DA NORMALIZAÇÃO DO THRESHOLD")
@@ -377,7 +472,8 @@ def main() -> None:
     print("   ordenado por score, ele não diversifica por si só — quem diversifica")
     print("   são os slots aleatórios de `exploracao`.)")
 
-    varrer_despopularizacao(U, V, popularidade, users, verdade, n_games, vistos)
+    varrer_n_factors(X, users, verdade_val, n_games, vistos)
+    varrer_despopularizacao(U, V, popularidade, users, verdade_val, n_games, vistos)
 
     # ── BPR: perda de ranqueamento em vez de reconstrução ───────────────────
     print("\n\nBPR-MF (perda de ranqueamento par-a-par)")
@@ -392,9 +488,9 @@ def main() -> None:
         modelo = BPRRanker(n_factors=50, n_epochs=30, use_item_bias=usar_bias, seed=SEED)
         modelo.fit(bpr_users, bpr_items, n_users, n_games)
 
-        completo = avaliar(f"BPR {rotulo}", modelo.scores, users, verdade, n_games)
+        completo = avaliar(f"BPR {rotulo}", modelo.scores, users, verdade_val, n_games)
         descoberta = avaliar(
-            f"BPR {rotulo} (descoberta)", modelo.scores, users, verdade, n_games, vistos=vistos
+            f"BPR {rotulo} (descoberta)", modelo.scores, users, verdade_val, n_games, vistos=vistos
         )
         print(
             f"  tarefa completa    P@10 {completo.precision:.4f}  "

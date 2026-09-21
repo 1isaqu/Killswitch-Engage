@@ -116,8 +116,25 @@ A tabela publicada anteriormente era o segundo run.
 
 ### Medição honesta (`scripts/experimentation/evaluate_ranker.py`)
 
-Split temporal real: as últimas 20% das sessões de cada usuário saem do treino e
-viram gabarito. Nada é derivado da própria predição, e há baselines para comparar.
+Split temporal em três partes, por usuário e por tempo:
+
+```
+|<------- treino 70% ------->|<- validação 15% ->|<- teste 15% ->|
+                                                        tempo ->
+```
+
+Toda escolha de modelo e hiperparâmetro (capacidade, alpha, viés) é feita na
+**validação**. O **teste** é tocado uma vez, no fim, só para reportar.
+
+> **Correção de método.** As primeiras versões desta avaliação usavam só
+> treino/teste, e cerca de 12 configurações diferentes foram comparadas no mesmo
+> conjunto de teste. Isso é overfitting ao teste: cada decisão tomada olhando
+> aquele número vaza informação, e "o melhor no teste" passa a medir quanto se
+> garimpou, não desempenho fora da amostra. O split de três partes corrige isso.
+
+Todas as métricas vêm com **intervalo de confiança de 95% por bootstrap** sobre
+usuários, e as comparações principais usam **bootstrap pareado** — se o intervalo
+da diferença cruza zero, a comparação não sustenta conclusão.
 
 > Os dados originais não existem mais (o projeto Supabase foi pausado por
 > inatividade, e o gerador nunca teve seed — então nunca foram reproduzíveis).
@@ -175,6 +192,37 @@ descoberta**. Esse é o problema em aberto do projeto, e agora ele tem um númer
 > ficam mal calibrados — o modo conservador deixa passar só ~2 itens e cai no
 > fallback de relaxamento. Thresholds por **percentil** do score do usuário
 > resolveriam, em vez de constantes absolutas.
+
+#### Overfitting: capacidade do modelo vs. generalização
+
+O ranker tem 122.507 itens × 50 fatores ≈ **6,6 milhões de parâmetros contra
+246 mil interações de treino — 27× mais parâmetros que dados**. Além disso, 41%
+dos jogos aparecem em exatamente uma interação, então o vetor latente desses
+itens é ajustado a uma única observação.
+
+Varredura de capacidade, medida na validação:
+
+| `n_factors` | P@10 tarefa completa | P@10 descoberta |
+|---|---|---|
+| 8 | 0.0691 | 0.0072 |
+| **16** | 0.0879 | **0.0075** ← melhor para descoberta |
+| 32 | 0.0998 | 0.0065 |
+| 50 *(config do projeto)* | 0.1081 | 0.0048 |
+| 100 | **0.1217** ← melhor para a tarefa completa | 0.0017 |
+
+**As duas tarefas apontam em direções opostas.** Mais capacidade melhora
+monotonicamente a tarefa completa e destrói a descoberta — de 0.0075 em k=16 para
+0.0017 em k=100, uma queda de 77%. É a assinatura clássica de overfitting: a
+capacidade extra é gasta decorando pares usuário-item do treino, o que ajuda a
+reordenar o que já se conhece e atrapalha a generalizar para item novo.
+
+O `n_components=50` que o projeto usa **já está muito além do ótimo para
+descoberta**. Só reduzir para 16 melhora a descoberta em 56% (0.0048 → 0.0075).
+
+> Isso qualifica a conclusão anterior: parte da derrota do SVD para a popularidade
+> na descoberta era overfitting, não limitação do método. Mesmo em k=16 a
+> popularidade ainda ganha (0.0075 contra 0.0091 na validação), mas a distância é
+> bem menor do que a medida em k=50.
 
 #### Tentativa de corrigir a descoberta: despopularização (não funcionou)
 
