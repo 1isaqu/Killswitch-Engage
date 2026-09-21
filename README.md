@@ -311,6 +311,35 @@ E a baseline fica em perspectiva:
 A baseline escolhida é **2,6× pior que o palpite trivial**. Comparar a cGAN contra
 ela infla o ganho; contra a moda, o espaço de melhora é muito menor.
 
+**Camada 4 — testada** (`scripts/experimentation/evaluate_cgan.py`). Split por
+usuário 80/20, condição de 26 features, alvo do ranker k=16, receita de treino
+idêntica à de `train_cgan.py` (BCE adversarial + L1 com peso 5, TTUR, `n_critic=2`):
+
+| Configuração | Parâmetros | MAE | std das predições | corr com alvo |
+|---|---|---|---|---|
+| Original (latent 32, hidden 128, 3 camadas) | 41.473 | 0.0658 | 0.0469 | 0.256 |
+| Pequena (latent 4, hidden 16, 2 camadas) | **849** | 0.0721 | 0.0963 | 0.246 |
+| *Baseline: sempre a moda (0.3)* | 0 | **0.0653** | — | — |
+| *Baseline: sempre 0.5 — a do projeto* | 0 | 0.1708 | — | — |
+
+Três leituras:
+
+1. **Nenhum modelo bate a moda.** A cGAN original fica em 0.0658 contra 0.0653 de
+   um `return 0.3`. Encolher para 849 parâmetros piora (0.0721). O mode collapse
+   não era só excesso de capacidade.
+2. **Contra a baseline do projeto, as duas parecem ótimas** (0.0658 vs 0.1708, um
+   "ganho" de 2,6×). Todo o ganho publicado vinha da escolha da baseline.
+3. **Existe sinal condicional fraco mas real**: correlação de ~0,25 com o alvo nas
+   duas configurações. As features dizem *algo* sobre o threshold ideal — só não o
+   bastante para vencer a moda numa métrica que premia prever a moda, já que 72%
+   da massa está num único valor.
+
+> **O problema mais fundo:** o threshold só importa se mudar a recomendação. A
+> medição da seção anterior mostrou que ele **não muda o top-k** — só restringe o
+> pool de candidatos, e a lista final sai sempre ordenada por score. Ou seja,
+> mesmo um preditor de threshold perfeito não melhoraria a recomendação. A camada 4
+> otimiza um parâmetro que não afeta a saída.
+
 #### Tentativa de corrigir a descoberta: despopularização (não funcionou)
 
 A hipótese padrão para "o ranker perde para popularidade na descoberta" é viés de
