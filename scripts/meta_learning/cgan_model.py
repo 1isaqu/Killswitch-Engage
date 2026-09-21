@@ -2,10 +2,18 @@ import torch
 import torch.nn as nn
 
 class Generator(nn.Module):
-    """
-    Gerador da cGAN (Meta-Usuário).
-    Recebe um ruído aleatório e o embedding do usuário (condição) 
-    e gera uma sugestão de threshold contínuo [0.2, 0.8].
+    """Gerador da cGAN.
+
+    NÃO gera usuários. O nome "Meta-Usuário" usado antes aqui induzia a erro: a
+    saída é `nn.Linear(hidden_dim, 1)`, ou seja UM escalar — o threshold de corte
+    do recomendador, remapeado para ~[0.25, 0.85]. O alvo de treino é a coluna
+    `best_threshold`.
+
+    Os usuários sintéticos do projeto nunca passaram por rede nenhuma: vêm de
+    `src/data_preparation/populate_supabase*.py` (e hoje de
+    `generate_synthetic_data.py`), com `random`/`numpy`.
+
+    Recebe ruído latente e o perfil do usuário como condição.
     """
     def __init__(self, latent_dim: int, condition_dim: int, hidden_dim: int, dropout_rate: float, num_layers: int = 3):
         super().__init__()
