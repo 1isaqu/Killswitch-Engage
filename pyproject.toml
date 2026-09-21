@@ -92,7 +92,10 @@ exclude = [".git", "__pycache__", ".venv", "data/", "models/", "mlruns/"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-v --tb=short"
+# tests/legacy_root_tests/ nao sao testes pytest: sao scripts manuais que batem
+# numa API em localhost:8000 no momento do import e chamam exit(). Coletados,
+# derrubam a sessao inteira do pytest com INTERNALERROR.
+addopts = "-v --tb=short --ignore=tests/legacy_root_tests"
 markers = [
     "requires_db: marks tests that need a real database connection (deselect with -m 'not requires_db')",
     "slow: marks slow integration tests",

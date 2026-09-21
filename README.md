@@ -14,7 +14,7 @@
 
 ## 📌 1. Visão Geral
 
-**Killswitch Engage** é um sistema completo de recomendação de jogos, construído do zero com ML em produção como objetivo central. O pipeline abrange desde a ingestão e limpeza de **122.507 jogos da Steam** até uma API em produção com latência < 15ms, passando por modelos de aprendizado de máquina treinados sobre **10.000 usuários sintéticos** com histórico realista de sessões.
+**Killswitch Engage** é um sistema completo de recomendação de jogos, construído do zero com ML em produção como objetivo central. O pipeline abrange desde a ingestão e limpeza de **122.507 jogos da Steam** até uma API FastAPI, passando por modelos de aprendizado de máquina treinados sobre **10.000 usuários sintéticos** com histórico realista de sessões.
 
 ### 🔍 O Problema
 
@@ -75,7 +75,9 @@ Uma arquitetura de **3 camadas em cascata**:
 - ✅ **Recomendações personalizadas** baseadas em perfil completo de usuário
 - ✅ **3 modos de recomendação**: Conservador (precisão), Equilibrado (padrão), Aventureiro (exploração)
 - ✅ **Cold start** para novos usuários — fallback pela média global dos embeddings de usuário
-- ✅ **API rápida** com latência < 15ms e cache Redis nas rotas analíticas (TTL 1h)
+- ✅ **API assíncrona** (FastAPI + asyncpg) com cache Redis nas rotas analíticas (TTL 1h)
+  — não há benchmark de latência no repositório; a marca de "< 15ms" citada antes
+  nunca foi medida por nenhum script aqui
 - ✅ **Pipeline completo de dados** com imputação inteligente validada (KS-test p = 1.0)
 - ⚠️ **MLOps**: MLflow instrumentado e funcionando; a busca com Optuna existe mas rodou sobre
   dados aleatórios (`optimization.py`), então não produziu hiperparâmetros aproveitáveis
@@ -657,8 +659,6 @@ mlflow ui --backend-store-uri sqlite:///scripts/experimentation/mlflow.db
 3. Commit suas mudanças (`git commit -m 'feat: adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
-
-Leia o arquivo `CONTRIBUTING.md` para mais detalhes sobre o processo de contribuição e padrões de código.
 
 ---
 
