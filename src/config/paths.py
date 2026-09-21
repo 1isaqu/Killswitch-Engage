@@ -31,7 +31,6 @@ class _ModelPaths:
     cluster_legacy: Path  # fallback for hdbscan_model.pkl
     ranker: Path
     ranker_legacy: Path  # fallback for lightfm_model.pkl
-    cgan_dir: Path
 
     def resolve_cluster(self) -> Path:
         """Return the cluster model path, falling back to the legacy name.
@@ -80,7 +79,6 @@ MODEL_PATHS = _ModelPaths(
     cluster_legacy=_MODELS_DIR / "hdbscan_model.pkl",
     ranker=_MODELS_DIR / "svd_ranker.pkl",
     ranker_legacy=_MODELS_DIR / "lightfm_model.pkl",
-    cgan_dir=_MODELS_DIR / "cgan",
 )
 
 DATA_PATHS = _DataPaths(
@@ -105,7 +103,6 @@ def ensure_directories() -> None:
     """
     for directory in [
         _MODELS_DIR,
-        MODEL_PATHS.cgan_dir,
         DATA_PATHS.ml_ready_games.parent,
         REPORT_PATHS.figures,
         REPORT_PATHS.insights,

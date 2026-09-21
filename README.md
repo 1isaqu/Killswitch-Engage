@@ -2,7 +2,6 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?logo=redis&logoColor=white)](https://redis.io/)
@@ -23,7 +22,7 @@ A Steam possui mais de 50.000 jogos no catálogo. Um usuário novo se perde. Um 
 
 ### 💡 A Solução
 
-Uma arquitetura de **4 camadas em cascata**:
+Uma arquitetura de **3 camadas em cascata**:
 
 ```
 [Entrada: Perfil do Usuário]
@@ -47,12 +46,6 @@ Uma arquitetura de **4 camadas em cascata**:
  └────────┬────────┘
           │
           ▼
- ┌─────────────────┐
- │  Camada 4: cGAN │  → Meta-aprendizado por modo (conservador/equilibrado/
- │  (Meta-Learner) │     aventureiro) com threshold e exploração calibrados
- └─────────────────┘
-          │
-          ▼
   [API FastAPI + Cache Redis]
 ```
 
@@ -67,10 +60,13 @@ Uma arquitetura de **4 camadas em cascata**:
 > | 1 — RandomForest | ✅ sim | ❌ não — `passa_filtro_qualidade()` retorna `True` incondicionalmente |
 > | 2 — KMeans | ✅ sim | ❌ não — carregada, nunca consultada |
 > | 3 — TruncatedSVD | ✅ sim | ✅ **sim — é o que gera a recomendação** |
-> | 4 — cGAN | ✅ sim | ❌ não — os thresholds vêm de um dicionário fixo, não da rede |
 >
-> Ou seja: as quatro camadas existem como artefatos treinados, mas **a cascata não está
-> conectada**. Integrá-las é o próximo passo do projeto, não um recurso entregue.
+> As três camadas existem como artefatos treinados, mas **a cascata não está
+> conectada**: só a camada 3 gera recomendação. Os thresholds dos modos são
+> constantes em `recomendador.py`.
+>
+> Existiu uma **camada 4 (cGAN)** que ajustaria esses thresholds por usuário. Foi
+> removida do pipeline depois de medida — ver §3.5.
 
 ---
 
@@ -227,14 +223,14 @@ descoberta**. Só reduzir para 16 melhora a descoberta em 56% (0.0048 → 0.0075
 #### Capacidade de cada camada vs. estatística dos dados
 
 A varredura acima levanta a pergunta para as outras camadas: a capacidade está
-calibrada pelo que os dados sustentam, ou por hábito?
+calibrada pelo que os dados sustentam, ou por hábito? (A camada 4 aparece em §3.5,
+porque a conclusão dela foi removê-la.)
 
 | Camada | Capacidade | Dados disponíveis | Veredito |
 |---|---|---|---|
 | 1 — RandomForest | 25 features, `max_depth=10`, 100 árvores → ~120 amostras por folha se saturada | 122.507 jogos, classes 31/69 | **Adequada.** Única camada bem dimensionada. |
 | 2 — KMeans + PCA | `PCA(n_components=0.95)` retém **21 de 26** colunas | 10.000 usuários; usuário médio toca **4,4 de 22 gêneros** | **Exigente demais.** |
 | 3 — SVD | `n_components=50` → 6,6M parâmetros | 246k interações (**27×**) | **Exigente demais.** Ótimo em k=16. |
-| 4 — cGAN | ~57k parâmetros no generator | ~7.000 linhas (**8×**) | **Muito exigente.** |
 
 **Camada 2.** `PCA(n_components=0.95)` praticamente não reduz nada: guarda 21 de 26
 dimensões. Como a matriz de gênero é esparsa e composicional (cada usuário toca 4,4
@@ -283,62 +279,6 @@ topo da lista.
 > README original descrevia ("fallback por cluster de arquétipo"), não melhoraria
 > a recomendação. O PCA continua mal calibrado, mas corrigi-lo não resolve —
 > resolve outra coisa.
-
-**Camada 4.** Medindo o alvo real (`best_threshold`, reproduzindo
-`compute_best_thresholds` sobre o ranker k=16):
-
-| `best_threshold` | massa |
-|---|---|
-| **0.3** | **72,1%** |
-| 0.4 | 9,8% |
-| 0.5 | 7,7% |
-| 0.6 | 3,4% |
-| 0.7 | 4,4% |
-| 0.8 | 2,6% |
-
-Entropia do alvo: **1,45 bits** (máximo possível com 6 valores: 2,59). São **57 mil
-parâmetros para aprender 1,45 bits.** Com essa folga e a perda L1 pesando 5×, o
-mínimo mais fácil de alcançar é emitir a moda constante — que é exatamente o mode
-collapse observado em `reports/figures/18_cgan_threshold_dist.png`.
-
-E a baseline fica em perspectiva:
-
-| Estratégia | MAE |
-|---|---|
-| Sempre prever a moda (0.3) | **0,0659** |
-| Sempre prever 0.5 — *a "baseline estática" do projeto* | 0,1741 |
-
-A baseline escolhida é **2,6× pior que o palpite trivial**. Comparar a cGAN contra
-ela infla o ganho; contra a moda, o espaço de melhora é muito menor.
-
-**Camada 4 — testada** (`scripts/experimentation/evaluate_cgan.py`). Split por
-usuário 80/20, condição de 26 features, alvo do ranker k=16, receita de treino
-idêntica à de `train_cgan.py` (BCE adversarial + L1 com peso 5, TTUR, `n_critic=2`):
-
-| Configuração | Parâmetros | MAE | std das predições | corr com alvo |
-|---|---|---|---|---|
-| Original (latent 32, hidden 128, 3 camadas) | 41.473 | 0.0658 | 0.0469 | 0.256 |
-| Pequena (latent 4, hidden 16, 2 camadas) | **849** | 0.0721 | 0.0963 | 0.246 |
-| *Baseline: sempre a moda (0.3)* | 0 | **0.0653** | — | — |
-| *Baseline: sempre 0.5 — a do projeto* | 0 | 0.1708 | — | — |
-
-Três leituras:
-
-1. **Nenhum modelo bate a moda.** A cGAN original fica em 0.0658 contra 0.0653 de
-   um `return 0.3`. Encolher para 849 parâmetros piora (0.0721). O mode collapse
-   não era só excesso de capacidade.
-2. **Contra a baseline do projeto, as duas parecem ótimas** (0.0658 vs 0.1708, um
-   "ganho" de 2,6×). Todo o ganho publicado vinha da escolha da baseline.
-3. **Existe sinal condicional fraco mas real**: correlação de ~0,25 com o alvo nas
-   duas configurações. As features dizem *algo* sobre o threshold ideal — só não o
-   bastante para vencer a moda numa métrica que premia prever a moda, já que 72%
-   da massa está num único valor.
-
-> **O problema mais fundo:** o threshold só importa se mudar a recomendação. A
-> medição da seção anterior mostrou que ele **não muda o top-k** — só restringe o
-> pool de candidatos, e a lista final sai sempre ordenada por score. Ou seja,
-> mesmo um preditor de threshold perfeito não melhoraria a recomendação. A camada 4
-> otimiza um parâmetro que não afeta a saída.
 
 #### Tentativa de corrigir a descoberta: despopularização (não funcionou)
 
@@ -427,6 +367,106 @@ tem o que usar.
 
 ---
 
+### 3.5 Camada 4 (cGAN) — removida do pipeline
+
+A camada 4 ajustaria por usuário o threshold dos modos, com uma GAN condicional.
+Foi **removida da arquitetura** depois de medida. O código continua em
+`scripts/meta_learning/` como experimento encerrado e documentado, não como etapa
+do pipeline.
+
+O que a medição mostrou, em ordem de importância:
+
+**1. O threshold não muda a recomendação.** Este é o argumento decisivo, e é
+independente da qualidade da rede. O threshold só restringe o *pool* de candidatos;
+a lista final sai sempre ordenada por score, então o top-k é praticamente o mesmo
+em qualquer modo (sobreposição medida de 9,2 em 10 antes da correção de escala).
+**Mesmo um preditor de threshold perfeito não melhoraria a saída.** A camada
+otimizava um parâmetro que não afeta o resultado.
+
+**2. Nenhum tamanho de rede bate a baseline trivial.**
+
+| Configuração | Parâmetros | MAE | std das predições | corr com alvo |
+|---|---|---|---|---|
+| Original (latent 32, hidden 128, 3 camadas) | 41.473 | 0.0658 | 0.0469 | 0.256 |
+| Pequena (latent 4, hidden 16, 2 camadas) | **849** | 0.0721 | 0.0963 | 0.246 |
+| *Baseline: sempre a moda (0.3)* | 0 | **0.0653** | — | — |
+| *Baseline: sempre 0.5 — a que o projeto usava* | 0 | 0.1708 | — | — |
+
+A cGAN original perde para um `return 0.3`. Encolher para 849 parâmetros piora.
+
+**3. O ganho publicado era a escolha da baseline.** Contra a constante 0.5 a rede
+parece 2,6× melhor. Mas 0.5 é um palpite ruim: o alvo tem **72% da massa em 0.3** e
+só **1,45 bits** de entropia. Contra a moda, não há ganho.
+
+**4. Havia sinal condicional fraco e real** — correlação de ~0,25 com o alvo, nas
+duas configurações. As features dizem *algo* sobre o threshold ideal. Só não o
+bastante para vencer a moda numa métrica que premia prever a moda.
+
+Reproduzir: `python scripts/experimentation/evaluate_cgan.py`
+
+<details>
+<summary>Medições de suporte (distribuição do alvo e capacidade)</summary>
+
+Medindo o alvo real (`best_threshold`, reproduzindo
+`compute_best_thresholds` sobre o ranker k=16):
+
+| `best_threshold` | massa |
+|---|---|
+| **0.3** | **72,1%** |
+| 0.4 | 9,8% |
+| 0.5 | 7,7% |
+| 0.6 | 3,4% |
+| 0.7 | 4,4% |
+| 0.8 | 2,6% |
+
+Entropia do alvo: **1,45 bits** (máximo possível com 6 valores: 2,59). São **57 mil
+parâmetros para aprender 1,45 bits.** Com essa folga e a perda L1 pesando 5×, o
+mínimo mais fácil de alcançar é emitir a moda constante — que é exatamente o mode
+collapse observado em `reports/figures/18_cgan_threshold_dist.png`.
+
+E a baseline fica em perspectiva:
+
+| Estratégia | MAE |
+|---|---|
+| Sempre prever a moda (0.3) | **0,0659** |
+| Sempre prever 0.5 — *a "baseline estática" do projeto* | 0,1741 |
+
+A baseline escolhida é **2,6× pior que o palpite trivial**. Comparar a cGAN contra
+ela infla o ganho; contra a moda, o espaço de melhora é muito menor.
+
+**Camada 4 — testada** (`scripts/experimentation/evaluate_cgan.py`). Split por
+usuário 80/20, condição de 26 features, alvo do ranker k=16, receita de treino
+idêntica à de `train_cgan.py` (BCE adversarial + L1 com peso 5, TTUR, `n_critic=2`):
+
+| Configuração | Parâmetros | MAE | std das predições | corr com alvo |
+|---|---|---|---|---|
+| Original (latent 32, hidden 128, 3 camadas) | 41.473 | 0.0658 | 0.0469 | 0.256 |
+| Pequena (latent 4, hidden 16, 2 camadas) | **849** | 0.0721 | 0.0963 | 0.246 |
+| *Baseline: sempre a moda (0.3)* | 0 | **0.0653** | — | — |
+| *Baseline: sempre 0.5 — a do projeto* | 0 | 0.1708 | — | — |
+
+Três leituras:
+
+1. **Nenhum modelo bate a moda.** A cGAN original fica em 0.0658 contra 0.0653 de
+   um `return 0.3`. Encolher para 849 parâmetros piora (0.0721). O mode collapse
+   não era só excesso de capacidade.
+2. **Contra a baseline do projeto, as duas parecem ótimas** (0.0658 vs 0.1708, um
+   "ganho" de 2,6×). Todo o ganho publicado vinha da escolha da baseline.
+3. **Existe sinal condicional fraco mas real**: correlação de ~0,25 com o alvo nas
+   duas configurações. As features dizem *algo* sobre o threshold ideal — só não o
+   bastante para vencer a moda numa métrica que premia prever a moda, já que 72%
+   da massa está num único valor.
+
+> **O problema mais fundo:** o threshold só importa se mudar a recomendação. A
+> medição da seção anterior mostrou que ele **não muda o top-k** — só restringe o
+> pool de candidatos, e a lista final sai sempre ordenada por score. Ou seja,
+> mesmo um preditor de threshold perfeito não melhoraria a recomendação. A camada 4
+> otimiza um parâmetro que não afeta a saída.
+
+</details>
+
+---
+
 ## 💼 4. Impacto de Negócio — não medido
 
 Esta seção apresentava ROI (320–580%), payback, MAU +27%, churn −18%, LTV +31% e
@@ -450,7 +490,6 @@ e um experimento controlado. Este ainda roda sobre 10.000 usuários sintéticos.
 |------------|---------------|
 | **TruncatedSVD** (scikit-learn) | Ranking colaborativo — camada 3 |
 | **Scikit-learn** | RandomForest (camada 1), KMeans (camada 2), TruncatedSVD (camada 3) |
-| **PyTorch** | cGAN meta-learner (camada 4) |
 | **Optuna** | Otimização Bayesiana (20 trials por modelo) |
 | **MLflow** | Versionamento de experimentos e artefatos |
 | **SciPy** | Testes estatísticos (KS-test, regressão log-log) |
@@ -469,7 +508,6 @@ e um experimento controlado. Este ainda roda sobre 10.000 usuários sintéticos.
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.0-EE4C2C?logo=pytorch&logoColor=white)
 ![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.3-F7931E?logo=scikit-learn&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?logo=redis&logoColor=white)
