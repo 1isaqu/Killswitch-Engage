@@ -515,18 +515,86 @@ Três leituras:
 
 ---
 
-## 💼 4. Impacto de Negócio — não medido
+## 💼 4. Impacto de Negócio
+
+### 4.1 O que havia antes
 
 Esta seção apresentava ROI (320–580%), payback, MAU +27%, churn −18%, LTV +31% e
-proxy metrics de CTR / tempo de sessão.
+proxy metrics de CTR / tempo de sessão. **Nenhum desses números foi derivado de
+dado algum** — não há usuário real, não há teste A/B, não há receita. Eram
+premissas escritas à mão com aparência de medição, e por isso foram removidas em
+vez de reetiquetadas.
 
-**Nenhum desses números foi derivado de dado algum** — não há usuário real, não há
-teste A/B, não há receita. Eram premissas escritas à mão com aparência de medição,
-e por isso foram removidas em vez de reetiquetadas.
+O que segue é a tentativa honesta de refazer essa seção: números quando existe
+medição, "não medido" quando não existe — na mesma régua que §3 aplicou ao
+ranker.
 
-O que o projeto pode honestamente dizer sobre impacto: **nada ainda**. Um sistema de
-recomendação só produz números de negócio depois de ir a produção com usuários reais
-e um experimento controlado. Este ainda roda sobre 10.000 usuários sintéticos.
+### 4.2 O que os dados sintéticos sustentam
+
+`scripts/experimentation/evaluate_business_metrics.py` computa retenção, churn,
+frequência/intensidade por coorte e tempo de vida a partir de
+`data/ml_ready/interacoes_sessoes.csv`, com intervalo de confiança de 95% por
+bootstrap sobre usuários em toda média. Saída completa em
+[`reports/metricas_negocio.md`](reports/metricas_negocio.md).
+
+> ⚠️ **Isto mede o gerador sintético, não jogadores.** O gerador sorteia sessões
+> de faixas fixas por perfil e distribui datas com uma Beta ao longo de 720
+> dias — os números abaixo são propriedades desses parâmetros, não descobertas
+> sobre comportamento humano.
+
+| Indicador | Valor (dados sintéticos) | IC 95% |
+|---|---:|---:|
+| Retenção D7 | 1,33% | [1,10%, 1,57%] |
+| Retenção D30 | 1,63% | [1,38%, 1,88%] |
+| Churn mensal (janela de 14 dias, média por usuário) | 66,1% | [65,5%, 66,7%]¹ |
+| Tempo de vida médio do usuário | 449,8 dias | [447,6, 452,3] |
+
+¹ A taxa de churn *pooled* (eventos/user-meses elegíveis, sem bootstrap) muda
+de 66,6% (janela de 7 dias) para 34,1% (janela de 30 dias) — uma variação de
+49% do valor mais alto. A definição de churn é frágil aqui; ver a tabela
+completa de sensibilidade no relatório.
+
+A retenção D7/D30 próxima de zero **não é um sinal de produto ruim** — é o
+gerador espalhando sessões quase uniformemente numa janela de 720 dias em vez
+de simular retorno diário, então a chance de cair exatamente num dia-alvo é
+baixa por construção. É outro lembrete do mesmo tipo que o resto deste README
+já dá: o número mede o que o código faz, não o que ele parece prometer.
+
+### 4.3 O que não é medível hoje, e o que falta para medir
+
+LTV, CAC, receita incremental e churn causalmente atribuído ao recomendador
+**não têm número nesta página** — o sistema nunca foi a produção, não há
+evento de pagamento, não há grupo de controle. O plano completo (definição
+operacional, eventos e tabelas que faltam no backend FastAPI/PostgreSQL,
+desenho de A/B com cálculo de tamanho amostral) está em
+[`reports/plano_medicao_negocio.md`](reports/plano_medicao_negocio.md).
+
+| Indicador | Medível hoje? | Peça que falta primeiro |
+|---|---|---|
+| LTV | Não | Eventos de transação/pagamento (não existem) |
+| CAC | Não | Canal de aquisição por usuário + log de gasto de marketing |
+| Receita incremental | Não | Eventos de transação **e** grupo de controle (experimento) |
+| Churn causal | Não | Grupo de controle (experimento) — os eventos de sessão já existem |
+| ROI | Não | Depende de todos os anteriores |
+
+### 4.4 ROI sob premissas explícitas — projeção, não medição
+
+`scripts/experimentation/roi_sensitivity.py` varre a premissa que decide tudo —
+quanto a recomendação melhoraria a retenção (`lift_retencao`, 0 a 25%) — contra
+um modelo de custo ancorado em preço público (Postgres gerenciado, Redis,
+compute da API, taxa de desenvolvimento — fontes e data de consulta no
+cabeçalho do script). Saída completa, com curva de ROI, elasticidade,
+sensibilidade por faixa e três cenários, em
+[`reports/roi_cenarios.md`](reports/roi_cenarios.md).
+
+> ⚠️ Todo número abaixo é rotulado "projeção" ou "cenário" — nenhum é medição.
+> `lift_retencao` não tem nenhuma âncora neste projeto; só um teste A/B real a
+> mede.
+
+A única afirmação defensável hoje: **o sistema se pagaria em 12 meses a partir
+de um lift de retenção de ~18,1%**, no cenário base declarado no script. Abaixo
+disso, o ROI projetado é negativo; acima, positivo — e essa é exatamente a
+pergunta que falta responder com um experimento real.
 
 ---
 
