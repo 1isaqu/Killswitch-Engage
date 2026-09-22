@@ -91,6 +91,59 @@ símbolos não preenchidos. Deixe explícito que preencher com estimativas de
 benchmark de outras plataformas produz uma projeção, não uma medição — e que
 projeção rotulada como medição foi exatamente o erro que a auditoria corrigiu.
 
+### Parte C — Estimativa sob premissas explícitas
+
+Medir ROI é impossível aqui. **Estimar é legítimo**, desde que a estimativa seja
+transparentemente uma função de entradas que o leitor possa inspecionar e
+contestar. Produza `scripts/experimentation/roi_sensitivity.py` e
+`reports/roi_cenarios.md`.
+
+O modelo tem duas metades. Os **custos** são razoavelmente ancoráveis: preço
+público de infraestrutura (Postgres gerenciado, Redis, compute da API), horas de
+desenvolvimento, custo de retreino. Cite a fonte de cada preço com a data da
+consulta.
+
+O **benefício** não tem âncora alguma neste projeto, e é aí que está o trabalho
+honesto. A receita incremental depende de:
+
+```
+receita_incremental = MAU × lift_retencao × ARPU × margem
+```
+
+- `MAU` — parâmetro de cenário, não dado do projeto.
+- `lift_retencao` — **o termo crítico**. Quanto a recomendação melhora retenção
+  em relação a não ter recomendação. O projeto não mede isso e não tem como
+  medir sem A/B. É a premissa dominante.
+- `ARPU` e `margem` — parâmetros de cenário.
+
+Faça o seguinte:
+
+1. **Varra `lift_retencao`** num intervalo largo e plausível (por exemplo de 0%
+   a 15%) e reporte o ROI resultante como curva, não como ponto.
+2. **Análise de sensibilidade.** Calcule a elasticidade do ROI a cada parâmetro e
+   ordene por influência. Se `lift_retencao` dominar — e deve dominar —, diga
+   isso com o número: "uma variação de X% nessa premissa move o ROI em Y pontos".
+3. **Ponto de equilíbrio.** Qual o `lift_retencao` mínimo para o ROI ser positivo
+   em 12 meses? Esse é o número mais útil do relatório inteiro, porque é uma
+   afirmação verificável: "o sistema se paga se, e somente se, melhorar retenção
+   em pelo menos Z%".
+4. **Três cenários** (conservador / base / otimista) com todas as premissas
+   tabeladas lado a lado, e o ROI de cada um.
+
+Regras de apresentação, não negociáveis:
+
+- O título de toda tabela e figura diz **"projeção"** ou **"cenário"**, nunca
+  "resultado" ou "medição".
+- Nenhum número desta parte aparece fora de contexto. Se for para o README ou
+  para um currículo, vai acompanhado da premissa que o gera.
+- A conclusão da seção declara explicitamente que o intervalo de ROI é largo
+  porque a premissa dominante não foi medida, e que só um teste A/B a estreita.
+
+O objetivo desta parte não é chegar a um número de ROI. É mostrar **de que o
+número depende** e **quanto** ele depende — e, com isso, transformar "não sei o
+ROI" em "sei exatamente o que preciso medir para saber, e sei que o projeto se
+paga a partir de um lift de Z%".
+
 ## Restrições
 
 Estas não são negociáveis:
@@ -100,7 +153,8 @@ Estas não são negociáveis:
    explique o que faltaria.
 2. **Nenhuma estimativa de benchmark apresentada como resultado.** Citar que
    plataformas similares veem X% é legítimo como referência, desde que a fonte
-   esteja citada e o texto deixe claro que não é uma medição deste sistema.
+   esteja citada e o texto deixe claro que não é uma medição deste sistema. Vale
+   como entrada de cenário na Parte C, nunca como saída medida.
 3. **Toda média vem com intervalo de confiança.** Diferença sem IC não sustenta
    comparação.
 4. **Nada de vazamento.** Se for calcular qualquer coisa preditiva, o split
