@@ -91,12 +91,6 @@ Para cada parâmetro, ROI nos dois extremos da faixa plausível declarada (`FAIX
 
 Título desta tabela é "cenário", não "resultado": os três pontos são combinações de premissas escolhidas para ilustrar o intervalo, não uma previsão central com dois desvios.
 
-## 5. Incerteza propagada (Monte Carlo sobre as faixas declaradas)
-
-10.000 sorteios uniformes dentro de `FAIXAS_DECLARADAS`, seed=42. Mediana do ROI projetado: **-57.0%**. P(ROI > 0) sob estas faixas: **13.8%**. Percentis 10/90: [-91.7%, +15.7%].
-
-![Cenário: distribuição do ROI sob incerteza](figures/roi_sensitivity_montecarlo.png)
-
 ## Conclusão
 
 O intervalo de ROI apresentado aqui é largo — de fortemente negativo a fortemente positivo entre os cenários conservador e otimista — **porque a premissa dominante (`lift_retencao`) nunca foi medida**, não porque o modelo de custo seja incerto: o lado de custo está ancorado em preço público (§ fontes, topo desta página) e varia pouco entre cenários comparado ao lado de benefício. Só um teste A/B real (desenho em `reports/plano_medicao_negocio.md` §3) estreita esse intervalo. Até lá, a afirmação defensável não é "o ROI é X%" — é "o sistema se paga a partir de um lift de retenção de 18.1%, e isso é o que precisa ser medido para saber se o projeto vale a pena".

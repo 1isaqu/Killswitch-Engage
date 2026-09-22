@@ -256,28 +256,6 @@ def sensibilidade_por_faixa(p_base: Parametros, horizonte_meses: int) -> list[Se
     return resultados
 
 
-# ── Monte Carlo: propagação de incerteza das premissas ─────────────────────
-
-
-def monte_carlo_roi(p_base: Parametros, horizonte_meses: int, n: int, seed: int) -> np.ndarray:
-    """Amostra cada parâmetro uniformemente na sua faixa declarada e calcula o ROI.
-
-    Não é uma simulação estatística de nada observado — é só a propagação
-    mecânica da incerteza que nós mesmos declaramos em `FAIXAS_DECLARADAS`
-    para dentro do resultado final, com `--seed` para reprodutibilidade.
-    """
-    rng = np.random.default_rng(seed)
-    amostras = {}
-    for campo, (lo, hi) in FAIXAS_DECLARADAS.items():
-        amostras[campo] = rng.uniform(lo, hi, size=n)
-
-    rois = np.empty(n)
-    for i in range(n):
-        kwargs = {campo: float(valores[i]) for campo, valores in amostras.items()}
-        rois[i] = roi(replace(p_base, **kwargs), horizonte_meses)
-    return rois
-
-
 # ── Cenários nomeados ────────────────────────────────────────────────────────
 
 
@@ -357,24 +335,6 @@ def gerar_grafico_tornado(sensibilidades: list[SensibilidadeFaixa], out_path: st
     plt.close(fig)
 
 
-def gerar_grafico_monte_carlo(rois_mc: np.ndarray, out_path: str) -> None:
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.hist(rois_mc * 100, bins=60, color="#10b981", alpha=0.8)
-    ax.axvline(0, color="#dc2626", linewidth=1.5, linestyle="--", label="ROI = 0")
-    ax.set_xlabel("ROI projetado em 12 meses (%)")
-    ax.set_ylabel("frequência (10.000 sorteios)")
-    ax.set_title(
-        "Cenário: distribuição do ROI sob incerteza das premissas declaradas\n"
-        "propagação mecânica de FAIXAS_DECLARADAS, não uma medição",
-        fontsize=10,
-    )
-    ax.legend()
-    ax.grid(alpha=0.3)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150)
-    plt.close(fig)
-
-
 # ── Relatório ────────────────────────────────────────────────────────────────
 
 
@@ -395,7 +355,6 @@ def gerar_relatorio(
     elasticidades: list[tuple[str, float]],
     sensibilidades: list[SensibilidadeFaixa],
     cenarios: dict[str, tuple[Parametros, float]],
-    rois_mc: np.ndarray,
     seed: int,
 ) -> str:
     linhas = []
@@ -531,19 +490,6 @@ def gerar_relatorio(
         "central com dois desvios.\n"
     )
 
-    linhas.append("## 5. Incerteza propagada (Monte Carlo sobre as faixas declaradas)\n")
-    p_positivo = float((rois_mc > 0).mean())
-    linhas.append(
-        f"10.000 sorteios uniformes dentro de `FAIXAS_DECLARADAS`, seed={seed}. "
-        f"Mediana do ROI projetado: **{np.median(rois_mc):+.1%}**. "
-        f"P(ROI > 0) sob estas faixas: **{p_positivo:.1%}**. "
-        f"Percentis 10/90: [{np.percentile(rois_mc, 10):+.1%}, "
-        f"{np.percentile(rois_mc, 90):+.1%}].\n"
-    )
-    linhas.append(
-        "![Cenário: distribuição do ROI sob incerteza](figures/roi_sensitivity_montecarlo.png)\n"
-    )
-
     linhas.append("## Conclusão\n")
     linhas.append(
         "O intervalo de ROI apresentado aqui é largo — de fortemente negativo a fortemente "
@@ -569,7 +515,6 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--out", default="reports/roi_cenarios.md")
     ap.add_argument("--figures-dir", default="reports/figures")
-    ap.add_argument("--mc-amostras", type=int, default=10_000)
     args = ap.parse_args()
 
     os.makedirs(args.figures_dir, exist_ok=True)
@@ -604,18 +549,12 @@ def main() -> None:
     for nome, (_, r) in cenarios.items():
         print(f"  {nome}: ROI = {r:+.1%}")
 
-    print(f"Rodando Monte Carlo ({args.mc_amostras:,} amostras, seed={args.seed}) ...")
-    rois_mc = monte_carlo_roi(PARAMETROS_BASE, args.horizonte_meses, args.mc_amostras, args.seed)
-
     print("Gerando figuras ...")
     gerar_grafico_curva(
         lifts, rois_curva, breakeven, os.path.join(args.figures_dir, "roi_sensitivity_lift.png")
     )
     gerar_grafico_tornado(
         sensibilidades, os.path.join(args.figures_dir, "roi_sensitivity_tornado.png")
-    )
-    gerar_grafico_monte_carlo(
-        rois_mc, os.path.join(args.figures_dir, "roi_sensitivity_montecarlo.png")
     )
 
     relatorio = gerar_relatorio(
@@ -626,7 +565,6 @@ def main() -> None:
         elasticidades,
         sensibilidades,
         cenarios,
-        rois_mc,
         args.seed,
     )
     with open(args.out, "w", encoding="utf-8") as f:
