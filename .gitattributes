@@ -1,0 +1,4 @@
+# Exclude HTML from GitHub's language statistics (linguist).
+# The only HTML in this repo is a generated Plotly report (reports/figures/),
+# which is documentation, not source code, so Python should be the main language.
+*.html linguist-documentation
